@@ -1,0 +1,37 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient, getAuthUser } from '@/lib/supabase-server';
+
+const HOURLY_RATE = 150;
+
+export async function GET(req: NextRequest) {
+  const user = await getAuthUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const sb = createServiceClient();
+  const { data: worker } = await sb.from('Worker').select('id').eq('phone', user.phone ?? '').single();
+  if (!worker) return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const { data: checkIns } = await sb
+    .from('CheckIn')
+    .select('id, checkInTime, checkOutTime, hoursAccrued, requestId, Request(date, shiftStart, shiftEnd, Site(name))')
+    .eq('workerId', (worker as any).id)
+    .not('checkOutTime', 'is', null)
+    .gte('checkInTime', startOfMonth.toISOString())
+    .order('checkInTime', { ascending: false });
+
+  const shifts = (checkIns ?? []).map((c: any) => ({
+    id: c.id,
+    date: c.Request?.date,
+    site: c.Request?.Site?.name ?? 'Unknown site',
+    hours: c.hoursAccrued ?? 0,
+    rate: HOURLY_RATE,
+    amount: Math.round((c.hoursAccrued ?? 0) * HOURLY_RATE),
+  }));
+
+  const total_month = shifts.reduce((sum, s) => sum + s.amount, 0);
+  return NextResponse.json({ total_month, shifts });
+}
