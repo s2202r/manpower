@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, getAuthUser } from '@/lib/supabase-server';
 import { workerFromUser } from '../_workerFromUser';
 
-const SELECT = 'id, name, phone, email, skills, "reliabilityScore", "totalShiftsCompleted", "totalNoShows", "kycStatus", "isActive", "verificationStatus"';
+const SELECT = 'id, name, phone, email, skills, "reliabilityScore", "totalShiftsCompleted", "totalNoShows", "kycStatus", "kycDocUrls", "photoUrl", "kycSubmittedAt", "isActive", "verificationStatus", "bankAccountNumber", "bankIfsc", "bankAccountName", "bankVerified"';
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);

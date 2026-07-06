@@ -6,10 +6,11 @@ import { AuthGuard } from "@/components/layout/AuthGuard";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 
 const tabs = [
-  { label: "Shifts", icon: "📋", href: "/worker/shifts" },
+  { label: "Shifts",   icon: "📋", href: "/worker/shifts" },
   { label: "Check In", icon: "📍", href: "/worker/checkin" },
   { label: "Earnings", icon: "💰", href: "/worker/earnings" },
-  { label: "Profile", icon: "👤", href: "/worker/profile" },
+  { label: "KYC",      icon: "🪪", href: "/worker/kyc" },
+  { label: "Profile",  icon: "👤", href: "/worker/profile" },
 ];
 
 export default function WorkerLayout({ children }: { children: React.ReactNode }) {
