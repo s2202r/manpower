@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Pencil, Check, X } from "lucide-react";
 
+interface SkillCategory { id: string; name: string; skills: { id: string; label: string }[]; }
+
 interface WorkerProfile {
   id: string;
   name: string;
@@ -64,7 +66,8 @@ export default function WorkerProfilePage() {
   // Edit form state
   const [editName, setEditName] = useState("");
   const [editSkills, setEditSkills] = useState<string[]>([]);
-  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+  const [categories, setCategories] = useState<SkillCategory[]>([]);
+  const [activeCatId, setActiveCatId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -83,11 +86,12 @@ export default function WorkerProfilePage() {
       }
       setLoading(false);
 
-      // Load available skills
+      // Load skill categories
       const skillRes = await fetch("/api/skill-tags");
       if (skillRes.ok) {
-        const tags = await skillRes.json();
-        setAvailableSkills((tags as { label: string }[]).map(t => t.label));
+        const cats: SkillCategory[] = await skillRes.json();
+        setCategories(cats);
+        if (cats.length > 0) setActiveCatId(cats[0].id);
       }
     }
     load();
@@ -219,21 +223,46 @@ export default function WorkerProfilePage() {
         </p>
         {editing ? (
           <div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {(availableSkills.length > 0 ? availableSkills : profile.skills).map(skill => {
-                const selected = editSkills.includes(skill);
-                return (
-                  <button key={skill} onClick={() => toggleSkill(skill)}
+            {/* Category tabs */}
+            {categories.length > 0 && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+                {categories.map(cat => (
+                  <button key={cat.id} onClick={() => setActiveCatId(cat.id)}
                     style={{
-                      padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: "pointer",
-                      background: selected ? "#1D4ED8" : "#F1F5F9",
+                      padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      background: activeCatId === cat.id ? "#0F172A" : "#F1F5F9",
+                      color: activeCatId === cat.id ? "#FFFFFF" : "#475569",
+                      border: activeCatId === cat.id ? "1px solid #0F172A" : "1px solid #CBD5E1",
+                    }}>
+                    {cat.name}
+                    {cat.skills.filter(s => editSkills.includes(s.label)).length > 0 && (
+                      <span style={{ marginLeft: 5, background: "#1D4ED8", color: "#fff", borderRadius: 10, padding: "0 5px", fontSize: 10 }}>
+                        {cat.skills.filter(s => editSkills.includes(s.label)).length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Skills in active category */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {(categories.find(c => c.id === activeCatId)?.skills ?? []).map(skill => {
+                const selected = editSkills.includes(skill.label);
+                return (
+                  <button key={skill.id} onClick={() => toggleSkill(skill.label)}
+                    style={{
+                      padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: "pointer",
+                      background: selected ? "#1D4ED8" : "#F8FAFC",
                       color: selected ? "#FFFFFF" : "#475569",
                       border: selected ? "1px solid #1D4ED8" : "1px solid #CBD5E1",
                     }}>
-                    {skill.replace(/_/g, " ")}
+                    {skill.label.replace(/_/g, " ")}
                   </button>
                 );
               })}
+              {(categories.find(c => c.id === activeCatId)?.skills ?? []).length === 0 && (
+                <p style={{ fontSize: 13, color: "#94A3B8" }}>No skills in this category</p>
+              )}
             </div>
             {editSkills.length === 0 && (
               <p style={{ fontSize: 12, color: "#F59E0B", marginTop: 8 }}>Select at least one skill</p>
