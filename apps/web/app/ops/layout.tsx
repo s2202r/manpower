@@ -8,10 +8,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
     <AuthGuard redirectTo="/auth/login">
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
-        <div
-          className="flex-1 flex flex-col min-w-0 overflow-hidden"
-          style={{ marginLeft: "232px" }}
-        >
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-[232px]">
           {children}
         </div>
       </div>
