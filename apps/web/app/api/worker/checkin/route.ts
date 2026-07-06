@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, getAuthUser } from '@/lib/supabase-server';
+import { workerFromUser } from '../_workerFromUser';
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req);
@@ -8,7 +9,7 @@ export async function POST(req: NextRequest) {
   const { request_id, lat, lng } = await req.json();
   const sb = createServiceClient();
 
-  const { data: worker } = await sb.from('Worker').select('id').eq('phone', user.phone ?? '').single();
+  const worker = await workerFromUser(sb, user);
   if (!worker) return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
 
   const { data, error } = await sb.from('CheckIn').insert({

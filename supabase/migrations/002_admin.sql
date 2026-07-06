@@ -19,3 +19,8 @@ ALTER TABLE "Worker" ADD COLUMN IF NOT EXISTS "verificationStatus" TEXT DEFAULT 
 -- Mark existing seed data as verified
 UPDATE "Company" SET "verificationStatus" = 'VERIFIED' WHERE "verificationStatus" = 'PENDING';
 UPDATE "Worker" SET "verificationStatus" = 'VERIFIED' WHERE "verificationStatus" = 'PENDING';
+
+-- Demo worker email accounts (link email to worker-001 and worker-002)
+-- Run after creating Supabase auth users worker1@work4.in and worker2@work4.in
+UPDATE "Worker" SET email = 'worker1@work4.in' WHERE id = 'worker-001';
+UPDATE "Worker" SET email = 'worker2@work4.in' WHERE id = 'worker-002';

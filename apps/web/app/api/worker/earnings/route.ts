@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, getAuthUser } from '@/lib/supabase-server';
+import { workerFromUser } from '../_workerFromUser';
 
 const HOURLY_RATE = 150;
 
@@ -8,7 +9,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = createServiceClient();
-  const { data: worker } = await sb.from('Worker').select('id').eq('phone', user.phone ?? '').single();
+  const worker = await workerFromUser(sb, user);
   if (!worker) return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
 
   const startOfMonth = new Date();

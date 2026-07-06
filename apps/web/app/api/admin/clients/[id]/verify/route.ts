@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '../../../../_guard';
+import { requireAdmin } from '../../../_guard';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const result = await requireAdmin(req);

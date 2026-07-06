@@ -1,25 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, getAuthUser } from '@/lib/supabase-server';
+import { workerFromUser } from '../_workerFromUser';
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const phone = user.phone;
-  if (!phone) return NextResponse.json({ error: 'No phone on account' }, { status: 400 });
-
   const sb = createServiceClient();
-
-  // Find worker by phone
-  const { data: worker, error: workerErr } = await sb
-    .from('Worker')
-    .select('id')
-    .eq('phone', phone)
-    .single();
-
-  if (workerErr || !worker) {
-    return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
-  }
+  const worker = await workerFromUser(sb, user);
+  if (!worker) return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
 
   // Fetch shift offers with request and site details
   const { data, error } = await sb

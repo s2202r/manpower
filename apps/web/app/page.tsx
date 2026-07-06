@@ -293,13 +293,16 @@ export default function LandingPage() {
             <span className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#D1FAE5", color: "#059669" }}>DEMO</span>
             <p className="text-2xl mb-3">👷</p>
             <h3 className="font-bold text-base mb-1" style={{ color: "var(--text-primary)" }}>Worker Demo</h3>
-            <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Worker shift portal</p>
+            <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Worker shift portal — use Email tab on login</p>
             <div className="space-y-1.5 mb-4">
               <div className="rounded px-3 py-2 text-xs font-mono" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                <span style={{ color: "var(--text-muted)" }}>Phone: </span>+91 9876543210
+                <span style={{ color: "var(--text-muted)" }}>Email: </span>worker1@work4.in
               </div>
-              <div className="rounded px-3 py-2 text-xs" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                OTP via Supabase phone auth
+              <div className="rounded px-3 py-2 text-xs font-mono" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+                <span style={{ color: "var(--text-muted)" }}>Pass: </span>Worker@2026
+              </div>
+              <div className="rounded px-3 py-2 text-xs font-mono" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+                <span style={{ color: "var(--text-muted)" }}>Alt: </span>worker2@work4.in / Worker@2026
               </div>
             </div>
             <Link href="/worker/login" className="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ background: "#10B981" }}>
