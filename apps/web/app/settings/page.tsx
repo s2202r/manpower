@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { AuthGuard } from "@/components/layout/AuthGuard";
 
-export default function SettingsPage() {
+function SettingsPageInner() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -355,4 +356,8 @@ export default function SettingsPage() {
       </div>
     </div>
   );
+}
+
+export default function SettingsPage() {
+  return <AuthGuard redirectTo="/auth/login"><SettingsPageInner /></AuthGuard>;
 }

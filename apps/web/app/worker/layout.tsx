@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AuthGuard } from "@/components/layout/AuthGuard";
 
 const tabs = [
   { label: "Shifts", icon: "📋", href: "/worker/shifts" },
@@ -14,6 +15,7 @@ export default function WorkerLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
 
   return (
+    <AuthGuard redirectTo="/worker/login">
     <div
       style={{
         minHeight: "100dvh",
@@ -81,5 +83,6 @@ export default function WorkerLayout({ children }: { children: React.ReactNode }
         })}
       </nav>
     </div>
+    </AuthGuard>
   );
 }
