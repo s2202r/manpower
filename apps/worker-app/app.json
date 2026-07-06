@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "ManpowerWorker",
+    "slug": "manpower-worker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "manpower",
+    "platforms": ["android", "ios"],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2563EB"
+      },
+      "package": "com.manpower.worker",
+      "permissions": ["ACCESS_FINE_LOCATION", "CAMERA", "READ_EXTERNAL_STORAGE"]
+    },
+    "plugins": [
+      "expo-router",
+      ["expo-location", {
+        "locationAlwaysAndWhenInUsePermission": "Allow ManpowerWorker to use your location for shift check-in."
+      }],
+      ["expo-camera", {
+        "cameraPermission": "Allow ManpowerWorker to use camera for check-in selfie."
+      }]
+    ]
+  }
+}
