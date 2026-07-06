@@ -58,13 +58,13 @@ VALUES
 --    Moderate:  offered=15, accepted=11, completed=9,  noShows=2  → score ~71
 --    Low:       offered=12, accepted=7,  completed=4,  noShows=4  → score ~37
 -- ============================================================
-INSERT INTO "Worker" (id, name, phone, skills, "kycStatus", "isActive", "whatsappOptIn",
+INSERT INTO "Worker" (id, name, phone, email, skills, "kycStatus", "isActive", "whatsappOptIn",
   "reliabilityScore", "totalShiftsOffered", "totalShiftsAccepted", "totalShiftsCompleted",
   "totalNoShows", "avgPunctualityMins", "createdAt", "updatedAt")
 VALUES
   -- High reliability (score ~97)
-  ('worker-001','Ravi Kumar',    '919876543201', ARRAY['GENERAL_HELPER','FORKLIFT_MHE']::"SkillTag"[],  'APPROVED', true, true, 97.0, 20,18,17,0, -3, NOW(), NOW()),
-  ('worker-002','Amit Sharma',   '919876543202', ARRAY['SCANNER_TRAINED']::"SkillTag"[],                'APPROVED', true, true, 97.0, 20,18,17,0, -3, NOW(), NOW()),
+  ('worker-001','Ravi Kumar',    '919876543201', 'worker1@work4.in', ARRAY['GENERAL_HELPER','FORKLIFT_MHE']::"SkillTag"[],  'APPROVED', true, true, 97.0, 20,18,17,0, -3, NOW(), NOW()),
+  ('worker-002','Amit Sharma',   '919876543202', 'worker2@work4.in', ARRAY['SCANNER_TRAINED']::"SkillTag"[],                'APPROVED', true, true, 97.0, 20,18,17,0, -3, NOW(), NOW()),
   ('worker-003','Suresh Yadav',  '919876543203', ARRAY['GENERAL_HELPER']::"SkillTag"[],                 'APPROVED', true, true, 97.0, 20,18,17,0, -3, NOW(), NOW()),
   ('worker-004','Vikram Singh',  '919876543204', ARRAY['FORKLIFT_MHE']::"SkillTag"[],                   'APPROVED', true, true, 97.0, 20,18,17,0, -3, NOW(), NOW()),
   ('worker-005','Deepak Gupta',  '919876543205', ARRAY['COLD_STORAGE','SCANNER_TRAINED']::"SkillTag"[], 'APPROVED', true, true, 97.0, 20,18,17,0, -3, NOW(), NOW()),
