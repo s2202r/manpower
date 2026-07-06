@@ -20,7 +20,9 @@ ALTER TABLE "Worker" ADD COLUMN IF NOT EXISTS "verificationStatus" TEXT DEFAULT 
 UPDATE "Company" SET "verificationStatus" = 'VERIFIED' WHERE "verificationStatus" = 'PENDING';
 UPDATE "Worker" SET "verificationStatus" = 'VERIFIED' WHERE "verificationStatus" = 'PENDING';
 
--- Demo worker email accounts (link email to worker-001 and worker-002)
--- Run after creating Supabase auth users worker1@work4.in and worker2@work4.in
+-- Add email column to Worker (for email-based auth / demo accounts)
+ALTER TABLE "Worker" ADD COLUMN IF NOT EXISTS email TEXT;
+
+-- Link demo worker email accounts (run after creating Supabase auth users)
 UPDATE "Worker" SET email = 'worker1@work4.in' WHERE id = 'worker-001';
 UPDATE "Worker" SET email = 'worker2@work4.in' WHERE id = 'worker-002';
