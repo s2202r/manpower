@@ -12,8 +12,6 @@ export async function workerFromUser(
   if (user.email) {
     const { data, error } = await sb.from('Worker').select('id').eq('email', user.email).maybeSingle();
     if (!error && data) return data as { id: string };
-    // Return error details so callers can surface the real cause
-    return { _error: error?.message ?? 'no row', _code: error?.code ?? 'NOTFOUND' } as unknown as null;
   }
   return null;
 }

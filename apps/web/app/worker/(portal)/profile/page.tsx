@@ -11,8 +11,8 @@ interface WorkerProfile {
   phone: string;
   skills: string[];
   reliabilityScore: number;
-  totalShifts: number;
-  noShowCount: number;
+  totalShiftsCompleted: number;
+  totalNoShows: number;
   isActive: boolean;
   kycStatus: string | null;
 }
@@ -66,7 +66,7 @@ export default function WorkerProfilePage() {
         setProfile(await res.json());
       } else {
         const body = await res.json().catch(() => ({}));
-        setErrorDetail(JSON.stringify({ status: res.status, ...body }, null, 2));
+        setErrorDetail(`${res.status}: ${body.error ?? 'unknown'}`);
       }
       setLoading(false);
     }
@@ -148,8 +148,8 @@ export default function WorkerProfilePage() {
         }}
       >
         {[
-          { label: "Total shifts", value: profile.totalShifts ?? 0, color: "#0F172A" },
-          { label: "No-shows", value: profile.noShowCount ?? 0, color: (profile.noShowCount ?? 0) > 0 ? "#DC2626" : "#0F172A" },
+          { label: "Total shifts", value: profile.totalShiftsCompleted ?? 0, color: "#0F172A" },
+          { label: "No-shows", value: profile.totalNoShows ?? 0, color: (profile.totalNoShows ?? 0) > 0 ? "#DC2626" : "#0F172A" },
         ].map((s) => (
           <div
             key={s.label}

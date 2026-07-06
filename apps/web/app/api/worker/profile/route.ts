@@ -7,22 +7,12 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = createServiceClient();
-  const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const ref = await workerFromUser(sb, user) as any;
-  if (!ref || ref._error) return NextResponse.json({
-    error: 'Worker not found',
-    debug: {
-      email: user.email ?? null,
-      phone: user.phone ?? null,
-      hasServiceKey,
-      dbError: ref?._error ?? null,
-      dbCode: ref?._dbCode ?? null,
-    },
-  }, { status: 404 });
+  const ref = await workerFromUser(sb, user);
+  if (!ref) return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
 
   const { data: worker, error } = await sb
     .from('Worker')
-    .select('id, name, phone, email, skills, reliabilityScore, totalShifts, noShowCount, lateCount, isActive')
+    .select('id, name, phone, email, skills, "reliabilityScore", "totalShiftsCompleted", "totalNoShows", "kycStatus", "isActive"')
     .eq('id', ref.id)
     .single();
 
