@@ -1,11 +1,11 @@
--- SkillTag table (admin-managed skills, separate from the legacy enum type)
-CREATE TABLE IF NOT EXISTS "SkillTag" (
-  id   TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+-- Skill table (admin-managed skills; name avoids conflict with the existing SkillTag enum type)
+CREATE TABLE IF NOT EXISTS "Skill" (
+  id    TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   label TEXT UNIQUE NOT NULL
 );
 
 -- Seed default skills
-INSERT INTO "SkillTag" (label) VALUES
+INSERT INTO "Skill" (label) VALUES
   ('GENERAL_HELPER'),
   ('FORKLIFT_MHE'),
   ('SCANNER_TRAINED'),

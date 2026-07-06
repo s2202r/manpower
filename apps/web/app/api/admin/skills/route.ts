@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   if ('error' in result) return result.error;
   const { sb } = result;
 
-  const { data: skills, error } = await sb.from('SkillTag').select('id, label');
+  const { data: skills, error } = await sb.from('Skill').select('id, label');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Count usage
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   if (!body.label?.trim()) return NextResponse.json({ error: 'label is required' }, { status: 400 });
 
-  const { data, error } = await sb.from('SkillTag').insert({ label: body.label.trim().toUpperCase() }).select().single();
+  const { data, error } = await sb.from('Skill').insert({ label: body.label.trim().toUpperCase() }).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data, { status: 201 });
 }
@@ -58,7 +58,7 @@ export async function DELETE(req: NextRequest) {
   const id = new URL(req.url).searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
 
-  const { error } = await sb.from('SkillTag').delete().eq('id', id);
+  const { error } = await sb.from('Skill').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }
