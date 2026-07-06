@@ -8,7 +8,10 @@ export async function GET(req: NextRequest) {
 
   const sb = createServiceClient();
   const ref = await workerFromUser(sb, user);
-  if (!ref) return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
+  if (!ref) return NextResponse.json({
+    error: 'Worker not found',
+    debug: { email: user.email ?? null, phone: user.phone ?? null },
+  }, { status: 404 });
 
   const { data: worker, error } = await sb
     .from('Worker')

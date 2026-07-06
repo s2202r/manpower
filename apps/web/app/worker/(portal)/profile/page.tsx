@@ -46,9 +46,17 @@ export default function WorkerProfilePage() {
   const [profile, setProfile] = useState<WorkerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
+      // Use getUser() for a fresh server-verified token
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setErrorDetail('No session — please log in again');
+        setLoading(false);
+        return;
+      }
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const res = await fetch("/api/worker/profile", {
@@ -56,6 +64,9 @@ export default function WorkerProfilePage() {
       });
       if (res.ok) {
         setProfile(await res.json());
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setErrorDetail(`${res.status}: ${body.error ?? 'unknown'} | email=${user.email ?? 'none'} | phone=${user.phone ?? 'none'}`);
       }
       setLoading(false);
     }
@@ -79,7 +90,18 @@ export default function WorkerProfilePage() {
   if (!profile) {
     return (
       <div style={{ padding: 24, textAlign: "center", paddingTop: 80 }}>
-        <p style={{ color: "#64748B" }}>Profile not found.</p>
+        <p style={{ color: "#64748B", marginBottom: 8 }}>Profile not found.</p>
+        {errorDetail && (
+          <p style={{ color: "#94A3B8", fontSize: 11, fontFamily: "monospace", wordBreak: "break-all" }}>
+            {errorDetail}
+          </p>
+        )}
+        <button
+          onClick={() => supabase.auth.signOut().then(() => router.push("/worker/login"))}
+          style={{ marginTop: 20, padding: "8px 20px", background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE", borderRadius: 8, fontSize: 13 }}
+        >
+          Sign out and try again
+        </button>
       </div>
     );
   }
