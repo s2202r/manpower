@@ -1,23 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Loader2, ShieldCheck } from "lucide-react";
 
+function ErrorFromParams({ onError }: { onError: (msg: string) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("error") === "not_admin") onError("Not authorised as admin.");
+  }, [searchParams, onError]);
+  return null;
+}
+
 export default function AdminLoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get("error") === "not_admin") {
-      setError("Not authorised as admin.");
-    }
-  }, [searchParams]);
 
   function fillDemo() {
     setEmail("admin@work4.in");
@@ -46,6 +47,9 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#0F172A" }}>
+      <Suspense>
+        <ErrorFromParams onError={setError} />
+      </Suspense>
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2.5 mb-8">
           <div className="flex items-center justify-center w-8 h-8 rounded" style={{ background: "#3B82F6" }}>
