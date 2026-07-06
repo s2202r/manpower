@@ -1,27 +1,114 @@
-version: '3.8'
+# ============================================================
+# Manpower — Local Development Stack
+# ============================================================
+# Use this when you are NOT using Supabase cloud.
+# Provides: Postgres 15, Redis 7, and (optionally) the NestJS API.
+#
+# Quick start:
+#   docker compose up -d postgres redis
+#   # Then run the API locally: cd apps/api && npm run start:dev
+#
+# To also run the API in Docker:
+#   docker compose --profile api up -d
+# ============================================================
+
+version: '3.9'
+
 services:
+
+  # ----------------------------------------------------------
+  # PostgreSQL 15
+  # ----------------------------------------------------------
   postgres:
     image: postgres:15-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: manpower
-      POSTGRES_USER: postgres
+      POSTGRES_DB:       manpower
+      POSTGRES_USER:     postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Optional: run the initial migration on first start
+      # - ./supabase/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d manpower"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
+  # ----------------------------------------------------------
+  # Redis 7 — used for job queues (WhatsApp offer dispatch) and
+  # caching fill-rate analytics
+  # ----------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ----------------------------------------------------------
+  # NestJS API (optional profile — only started with --profile api)
+  # Build the image first: docker compose build api
+  # ----------------------------------------------------------
   api:
+    profiles: ["api"]
     build:
       context: ./apps/api
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/manpower
-      SUPABASE_JWT_SECRET: your-supabase-jwt-secret
+      NODE_ENV:            development
+      PORT:                3001
+      DATABASE_URL:        postgresql://postgres:postgres@postgres:5432/manpower?schema=public
+      DIRECT_URL:          postgresql://postgres:postgres@postgres:5432/manpower?schema=public
+      REDIS_URL:           redis://redis:6379
+      SUPABASE_URL:        ${SUPABASE_URL:-http://localhost:54321}
+      SUPABASE_ANON_KEY:   ${SUPABASE_ANON_KEY:-}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-for-local-dev}
+      WHATSAPP_ACCESS_TOKEN:      ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_PHONE_NUMBER_ID:   ${WHATSAPP_PHONE_NUMBER_ID:-}
+      RAZORPAY_KEY_ID:     ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      DEFAULT_GST_RATE:    0.18
+      INVOICE_DUE_DAYS:    30
+      DEFAULT_HOURLY_RATE: 200
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ----------------------------------------------------------
+  # pgAdmin (optional profile — only started with --profile tools)
+  # Browse: http://localhost:5050  admin@manpower.local / admin
+  # ----------------------------------------------------------
+  pgadmin:
+    profiles: ["tools"]
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    admin@manpower.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
     depends_on:
       - postgres
 
 volumes:
   postgres_data:
+  redis_data:
+  pgadmin_data:

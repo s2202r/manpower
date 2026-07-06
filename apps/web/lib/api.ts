@@ -1,6 +1,8 @@
 import { supabase } from "./supabase";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+// Empty string = use relative /api/* paths (works on Vercel and local Next.js dev)
+// Set NEXT_PUBLIC_API_URL to point to a separate NestJS server if needed
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
 

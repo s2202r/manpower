@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView,
+  SafeAreaView, StatusBar, ActivityIndicator,
+} from 'react-native';
 import { getMyCheckins } from '@/lib/api';
 
 type CheckinRecord = {
@@ -13,116 +16,224 @@ type CheckinRecord = {
 
 const HOURLY_RATE = 120;
 
+function formatRupees(n: number) {
+  return `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+}
+
 export default function EarningsScreen() {
   const [checkins, setCheckins] = useState<CheckinRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getMyCheckins()
-      .then(res => setCheckins(res.data))
-      .catch(() => {})
+      .then(res => setCheckins(res.data ?? []))
+      .catch(() => setCheckins([]))
       .finally(() => setLoading(false));
   }, []);
 
   const verified = checkins.filter(c => c.isVerified && c.hoursWorked);
-  const totalHours = verified.reduce((sum, c) => sum + (c.hoursWorked || 0), 0);
-  const estimated = totalHours * HOURLY_RATE;
-  const pending = checkins.filter(c => !c.isVerified && c.checkOutAt);
+  const totalHours = verified.reduce((sum, c) => sum + (c.hoursWorked ?? 0), 0);
+  const totalEarnings = totalHours * HOURLY_RATE;
+  const pendingCount = checkins.filter(c => !c.isVerified && c.checkOutAt).length;
 
-  if (loading) return <View style={styles.center}><Text>Loading...</Text></View>;
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#1E3A8A" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Earnings</Text>
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>💰  मेरी कमाई</Text>
+        <Text style={styles.headerSub}>My Earnings</Text>
+      </View>
 
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryValue}>{totalHours.toFixed(1)}h</Text>
-            <Text style={styles.summaryLabel}>Verified Hours</Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+
+        {/* Summary card */}
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryTop}>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>{totalHours.toFixed(1)}</Text>
+              <Text style={styles.summaryUnit}>घंटे  /  Hours</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>{formatRupees(totalEarnings)}</Text>
+              <Text style={styles.summaryUnit}>कुल कमाई  /  Earned</Text>
+            </View>
           </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryValue}>₹{estimated.toFixed(0)}</Text>
-            <Text style={styles.summaryLabel}>Estimated Earnings</Text>
-          </View>
-        </View>
-        <View style={styles.payoutSection}>
+
+          {pendingCount > 0 && (
+            <View style={styles.pendingChip}>
+              <Text style={styles.pendingChipText}>
+                ⏳  {pendingCount} shift{pendingCount > 1 ? 's' : ''} awaiting verification
+              </Text>
+            </View>
+          )}
+
+          {/* Instant Payout — disabled, coming soon */}
           <TouchableOpacity
             style={styles.payoutBtn}
             onPress={() => Alert.alert(
-              'Coming Soon',
-              'Instant daily payouts (Earned Wage Access) will be available soon. You will be notified when this feature launches.'
+              'जल्द आ रहा है!  Coming Soon',
+              'Daily payouts (Earned Wage Access) will launch soon.\nआपके account में पैसे directly आएंगे।\n\nYou will be notified when this feature is live.'
             )}
+            activeOpacity={0.8}
           >
-            <Text style={styles.payoutBtnText}>⚡ Instant Payout</Text>
-            <Text style={styles.payoutBtnSub}>Coming soon</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {pending.length > 0 && (
-        <View style={styles.pendingBox}>
-          <Text style={styles.pendingTitle}>⏳ Pending Verification ({pending.length})</Text>
-          <Text style={styles.pendingText}>These shifts await supervisor verification before earnings are confirmed.</Text>
-        </View>
-      )}
-
-      <Text style={styles.sectionTitle}>Shift History</Text>
-      {checkins.length === 0 ? (
-        <View style={styles.emptyBox}><Text style={styles.emptyText}>No shifts yet.</Text></View>
-      ) : (
-        checkins.map(c => (
-          <View key={c.id} style={styles.shiftRow}>
-            <View>
-              <Text style={styles.shiftSite}>{c.request.site.name}</Text>
-              <Text style={styles.shiftDate}>
-                {new Date(c.request.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-              </Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              {c.hoursWorked ? (
-                <Text style={styles.shiftHours}>{c.hoursWorked.toFixed(1)}h • ₹{(c.hoursWorked * HOURLY_RATE).toFixed(0)}</Text>
-              ) : (
-                <Text style={styles.shiftPending}>In progress</Text>
-              )}
-              <View style={[styles.verifiedBadge, { backgroundColor: c.isVerified ? '#D1FAE5' : '#FEF3C7' }]}>
-                <Text style={{ fontSize: 11, color: c.isVerified ? '#065F46' : '#92400E' }}>
-                  {c.isVerified ? 'Verified' : 'Pending'}
-                </Text>
+            <View style={styles.payoutBtnInner}>
+              <Text style={styles.payoutBtnEmoji}>⚡</Text>
+              <View>
+                <Text style={styles.payoutBtnTitle}>Instant Payout</Text>
+                <Text style={styles.payoutBtnSub}>Coming soon — daily payouts launching soon</Text>
+              </View>
+              <View style={styles.payoutBtnBadge}>
+                <Text style={styles.payoutBtnBadgeText}>Soon</Text>
               </View>
             </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Rate info */}
+        <View style={styles.rateCard}>
+          <Text style={styles.rateText}>Rate: <Text style={styles.rateAmount}>₹{HOURLY_RATE}/hour</Text></Text>
+          <Text style={styles.rateNote}>Earnings are estimated and subject to supervisor verification.</Text>
+        </View>
+
+        {/* History */}
+        <Text style={styles.sectionLabel}>Shift History</Text>
+
+        {checkins.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyEmoji}>📭</Text>
+            <Text style={styles.emptyText}>No shifts completed yet.</Text>
           </View>
-        ))
-      )}
-    </ScrollView>
+        ) : (
+          checkins.map(c => {
+            const date = new Date(c.request.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+            const earned = c.hoursWorked ? c.hoursWorked * HOURLY_RATE : null;
+            return (
+              <View key={c.id} style={styles.shiftRow}>
+                <View style={[styles.shiftStatusBar, { backgroundColor: c.isVerified ? '#16A34A' : '#F59E0B' }]} />
+                <View style={styles.shiftLeft}>
+                  <Text style={styles.shiftSite}>{c.request.site.name}</Text>
+                  <Text style={styles.shiftDate}>{date}</Text>
+                </View>
+                <View style={styles.shiftRight}>
+                  {c.hoursWorked ? (
+                    <>
+                      <Text style={styles.shiftHours}>{c.hoursWorked.toFixed(1)}h</Text>
+                      <Text style={styles.shiftEarned}>{formatRupees(earned!)}</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.shiftInProgress}>In progress</Text>
+                  )}
+                  <View style={[styles.badge, c.isVerified ? styles.badgeVerified : styles.badgePending]}>
+                    <Text style={[styles.badgeText, c.isVerified ? styles.badgeTextVerified : styles.badgeTextPending]}>
+                      {c.isVerified ? 'Verified' : 'Pending'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { fontSize: 22, fontWeight: '700', color: '#1E3A5F', padding: 16, paddingTop: 56, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: '#F1F5F9' },
+  scroll: { flex: 1 },
+  content: { padding: 16, paddingBottom: 32, gap: 12 },
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerTitle: { fontSize: 26, fontWeight: '800', color: '#1E3A8A' },
+  headerSub: { fontSize: 14, color: '#6B7280', marginTop: 2 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  summaryCard: { margin: 16, backgroundColor: '#1E3A5F', borderRadius: 16, padding: 20 },
-  summaryRow: { flexDirection: 'row', marginBottom: 20 },
+
+  summaryCard: {
+    backgroundColor: '#1E3A8A',
+    borderRadius: 18,
+    padding: 20,
+    gap: 16,
+  },
+  summaryTop: { flexDirection: 'row' },
   summaryItem: { flex: 1, alignItems: 'center' },
-  summaryValue: { fontSize: 28, fontWeight: '700', color: '#fff' },
-  summaryLabel: { fontSize: 12, color: '#93C5FD', marginTop: 2 },
-  summaryDivider: { width: 1, backgroundColor: '#334D6E' },
-  payoutSection: { borderTopWidth: 1, borderTopColor: '#334D6E', paddingTop: 16 },
-  payoutBtn: { backgroundColor: '#334D6E', borderRadius: 10, padding: 14, alignItems: 'center', opacity: 0.7 },
-  payoutBtnText: { color: '#93C5FD', fontWeight: '600', fontSize: 15 },
-  payoutBtnSub: { color: '#60A5FA', fontSize: 11, marginTop: 2 },
-  pendingBox: { marginHorizontal: 16, marginBottom: 8, backgroundColor: '#FFFBEB', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#FDE68A' },
-  pendingTitle: { fontWeight: '600', color: '#92400E', marginBottom: 4 },
-  pendingText: { color: '#78350F', fontSize: 13 },
-  sectionTitle: { fontSize: 15, fontWeight: '600', color: '#374151', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
-  emptyBox: { margin: 16, padding: 24, backgroundColor: '#fff', borderRadius: 12, alignItems: 'center' },
-  emptyText: { color: '#9CA3AF' },
-  shiftRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 8, borderRadius: 10, padding: 14, elevation: 1 },
-  shiftSite: { fontWeight: '600', color: '#111827' },
-  shiftDate: { color: '#6B7280', fontSize: 13, marginTop: 2 },
-  shiftHours: { fontWeight: '600', color: '#111827' },
-  shiftPending: { color: '#F59E0B', fontSize: 13 },
-  verifiedBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, marginTop: 4 },
+  summaryValue: { fontSize: 36, fontWeight: '800', color: '#FFFFFF', fontVariant: ['tabular-nums'] },
+  summaryUnit: { fontSize: 13, color: '#93C5FD', marginTop: 4, textAlign: 'center' },
+  summaryDivider: { width: 1, backgroundColor: '#3B5998', marginVertical: 4 },
+
+  pendingChip: {
+    backgroundColor: '#2D4E99',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+  },
+  pendingChipText: { color: '#FDE68A', fontSize: 14, fontWeight: '600' },
+
+  payoutBtn: {
+    backgroundColor: '#2D4E99',
+    borderRadius: 12,
+    padding: 14,
+    opacity: 0.85,
+  },
+  payoutBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  payoutBtnEmoji: { fontSize: 28 },
+  payoutBtnTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  payoutBtnSub: { fontSize: 12, color: '#93C5FD', marginTop: 2 },
+  payoutBtnBadge: { marginLeft: 'auto', backgroundColor: '#F59E0B', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  payoutBtnBadgeText: { fontSize: 12, fontWeight: '800', color: '#1F2937' },
+
+  rateCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 14,
+    elevation: 1,
+  },
+  rateText: { fontSize: 15, color: '#374151' },
+  rateAmount: { fontWeight: '800', color: '#15803D' },
+  rateNote: { fontSize: 12, color: '#9CA3AF', marginTop: 4 },
+
+  sectionLabel: { fontSize: 16, fontWeight: '700', color: '#374151', paddingTop: 4 },
+
+  emptyBox: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 32, alignItems: 'center', gap: 8 },
+  emptyEmoji: { fontSize: 40 },
+  emptyText: { color: '#9CA3AF', fontSize: 15 },
+
+  shiftRow: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    elevation: 1,
+    overflow: 'hidden',
+  },
+  shiftStatusBar: { width: 5, alignSelf: 'stretch' },
+  shiftLeft: { flex: 1, padding: 14 },
+  shiftSite: { fontSize: 16, fontWeight: '700', color: '#111827' },
+  shiftDate: { color: '#6B7280', fontSize: 13, marginTop: 3 },
+  shiftRight: { alignItems: 'flex-end', paddingRight: 14, paddingVertical: 14 },
+  shiftHours: { fontSize: 18, fontWeight: '700', color: '#111827', fontVariant: ['tabular-nums'] },
+  shiftEarned: { fontSize: 14, color: '#15803D', fontWeight: '600', marginTop: 2 },
+  shiftInProgress: { color: '#F59E0B', fontSize: 14, fontWeight: '600' },
+  badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, marginTop: 6 },
+  badgeVerified: { backgroundColor: '#D1FAE5' },
+  badgePending: { backgroundColor: '#FEF3C7' },
+  badgeText: { fontSize: 11, fontWeight: '700' },
+  badgeTextVerified: { color: '#065F46' },
+  badgeTextPending: { color: '#92400E' },
 });

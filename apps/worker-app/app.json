@@ -1,27 +1,62 @@
 {
   "expo": {
-    "name": "ManpowerWorker",
+    "name": "Manpower Worker",
     "slug": "manpower-worker",
     "version": "1.0.0",
+    "sdkVersion": "51.0.0",
     "orientation": "portrait",
     "scheme": "manpower",
+    "userInterfaceStyle": "light",
     "platforms": ["android", "ios"],
+    "splash": {
+      "backgroundColor": "#1E3A8A",
+      "resizeMode": "contain"
+    },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2563EB"
+        "backgroundColor": "#1E3A8A"
       },
       "package": "com.manpower.worker",
-      "permissions": ["ACCESS_FINE_LOCATION", "CAMERA", "READ_EXTERNAL_STORAGE"]
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.manpower.worker",
+      "supportsTablet": false
     },
     "plugins": [
       "expo-router",
-      ["expo-location", {
-        "locationAlwaysAndWhenInUsePermission": "Allow ManpowerWorker to use your location for shift check-in."
-      }],
-      ["expo-camera", {
-        "cameraPermission": "Allow ManpowerWorker to use camera for check-in selfie."
-      }]
-    ]
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Manpower Worker needs your location to verify you are at the warehouse before check-in.",
+          "locationWhenInUsePermission": "Manpower Worker needs your location to verify you are at the warehouse before check-in."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Manpower Worker uses the camera to take a selfie for shift check-in verification."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Manpower Worker accesses photos to upload KYC documents.",
+          "cameraPermission": "Manpower Worker uses the camera for profile photo and selfie check-in."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    }
   }
 }
