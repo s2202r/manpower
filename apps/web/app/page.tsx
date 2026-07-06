@@ -259,6 +259,78 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* DEMO ACCESS */}
+      <section id="demo" className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
+        <div className="text-center mb-10">
+          <Badge>Try it now</Badge>
+          <h2 className="mt-3 text-3xl font-bold" style={{ color: "var(--text-primary)" }}>Demo Access</h2>
+          <p className="mt-3 text-base max-w-lg mx-auto" style={{ color: "var(--text-secondary)" }}>
+            Explore the platform with pre-loaded data. No sign-up required.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-5 mb-5">
+          {/* Client Demo */}
+          <div className="rounded-xl p-5 relative" style={{ background: "var(--surface-raised)", border: "1px solid var(--border)" }}>
+            <span className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#DBEAFE", color: "#1D4ED8" }}>DEMO</span>
+            <p className="text-2xl mb-3">🏢</p>
+            <h3 className="font-bold text-base mb-1" style={{ color: "var(--text-primary)" }}>Client Demo</h3>
+            <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Warehouse operator dashboard</p>
+            <div className="space-y-1.5 mb-4">
+              <div className="rounded px-3 py-2 text-xs font-mono" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+                <span style={{ color: "var(--text-muted)" }}>Email: </span>demo@delhilogistics.com
+              </div>
+              <div className="rounded px-3 py-2 text-xs font-mono" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+                <span style={{ color: "var(--text-muted)" }}>Pass: </span>Demo@2026
+              </div>
+            </div>
+            <Link href="/auth/login" className="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ background: "var(--accent)" }}>
+              Login as Client →
+            </Link>
+          </div>
+
+          {/* Worker Demo */}
+          <div className="rounded-xl p-5 relative" style={{ background: "var(--surface-raised)", border: "1px solid var(--border)" }}>
+            <span className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#D1FAE5", color: "#059669" }}>DEMO</span>
+            <p className="text-2xl mb-3">👷</p>
+            <h3 className="font-bold text-base mb-1" style={{ color: "var(--text-primary)" }}>Worker Demo</h3>
+            <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Worker shift portal</p>
+            <div className="space-y-1.5 mb-4">
+              <div className="rounded px-3 py-2 text-xs font-mono" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+                <span style={{ color: "var(--text-muted)" }}>Phone: </span>+91 9876543210
+              </div>
+              <div className="rounded px-3 py-2 text-xs" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                OTP via Supabase phone auth
+              </div>
+            </div>
+            <Link href="/worker/login" className="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ background: "#10B981" }}>
+              Login as Worker →
+            </Link>
+          </div>
+
+          {/* Admin Demo */}
+          <div className="rounded-xl p-5 relative" style={{ background: "var(--surface-raised)", border: "1px solid var(--border)" }}>
+            <span className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#F3E8FF", color: "#7C3AED" }}>DEMO</span>
+            <p className="text-2xl mb-3">🛡️</p>
+            <h3 className="font-bold text-base mb-1" style={{ color: "var(--text-primary)" }}>Admin Demo</h3>
+            <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Platform admin console</p>
+            <div className="space-y-1.5 mb-4">
+              <div className="rounded px-3 py-2 text-xs font-mono" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+                <span style={{ color: "var(--text-muted)" }}>Email: </span>admin@work4.in
+              </div>
+              <div className="rounded px-3 py-2 text-xs font-mono" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+                <span style={{ color: "var(--text-muted)" }}>Pass: </span>Admin@2026
+              </div>
+            </div>
+            <Link href="/admin/login" className="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ background: "#7C3AED" }}>
+              Admin Console →
+            </Link>
+          </div>
+        </div>
+        <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
+          Demo accounts are read-only. Data resets daily.
+        </p>
+      </section>
+
       {/* INSTALL APP */}
       <section id="install" className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
         <div

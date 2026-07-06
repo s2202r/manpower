@@ -84,6 +84,15 @@ export default function LoginPage() {
             </div>
           )}
 
+          <button
+            type="button"
+            onClick={() => { setEmail("demo@delhilogistics.com"); setPassword("Demo@2026"); }}
+            className="w-full mb-4 py-2 rounded text-xs font-medium transition-opacity hover:opacity-80"
+            style={{ background: "var(--accent-subtle)", color: "var(--accent)", border: "1px solid var(--accent)" }}
+          >
+            Fill demo credentials
+          </button>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
