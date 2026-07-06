@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const supply = new Map<string, number>();
   (wrkRes.data ?? []).forEach((w: any) => (w.skills ?? []).forEach((s: string) => supply.set(s, (supply.get(s) ?? 0) + 1)));
 
-  const all = Array.from(new Set([...demand.keys(), ...supply.keys()]));
+  const all = Array.from(new Set([...Array.from(demand.keys()), ...Array.from(supply.keys())]));
   return NextResponse.json(all.map(s => ({
     skill: s.replace(/_/g, ' '),
     demand: demand.get(s) ?? 0,
