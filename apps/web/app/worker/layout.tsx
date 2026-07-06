@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthGuard } from "@/components/layout/AuthGuard";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 
 const tabs = [
   { label: "Shifts", icon: "📋", href: "/worker/shifts" },
@@ -31,6 +32,7 @@ export default function WorkerLayout({ children }: { children: React.ReactNode }
         {children}
       </main>
 
+      <PwaInstallBanner />
       {/* Bottom tab bar */}
       <nav
         style={{

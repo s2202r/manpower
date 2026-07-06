@@ -1,0 +1,41 @@
+{
+  "name": "Work4.in — Warehouse Staffing",
+  "short_name": "Work4.in",
+  "description": "On-demand warehouse staffing platform for operators and workers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F1F4FA",
+  "theme_color": "#2563EB",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Worker Portal",
+      "short_name": "Worker",
+      "description": "View and accept shifts",
+      "url": "/worker/shifts",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Client Dashboard",
+      "short_name": "Dashboard",
+      "description": "Manage staffing requests",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["business", "productivity"]
+}
