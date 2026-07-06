@@ -57,11 +57,11 @@ export default function LandingPage() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/worker/login" className="hidden sm:inline-flex items-center px-3 py-1.5 rounded text-sm font-medium transition-opacity hover:opacity-80" style={{ border: "1px solid var(--border)", color: "var(--text-primary)", background: "var(--surface-raised)" }}>
-              Worker Login
+            <Link href="/worker/login" className="inline-flex items-center px-3 py-1.5 rounded text-sm font-medium transition-opacity hover:opacity-80" style={{ border: "1px solid var(--border)", color: "var(--text-primary)", background: "var(--surface-raised)" }}>
+              Worker
             </Link>
             <Link href="/auth/login" className="inline-flex items-center px-3 py-1.5 rounded text-sm font-medium text-white transition-opacity hover:opacity-90" style={{ background: "var(--accent)" }}>
-              Client Login
+              Client
             </Link>
           </div>
         </div>
