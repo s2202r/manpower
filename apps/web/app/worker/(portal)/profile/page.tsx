@@ -66,7 +66,7 @@ export default function WorkerProfilePage() {
         setProfile(await res.json());
       } else {
         const body = await res.json().catch(() => ({}));
-        setErrorDetail(`${res.status}: ${body.error ?? 'unknown'} | email=${user.email ?? 'none'} | phone=${user.phone ?? 'none'}`);
+        setErrorDetail(JSON.stringify({ status: res.status, ...body }, null, 2));
       }
       setLoading(false);
     }
