@@ -13,10 +13,20 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Try to get emails from User table via userId
-  const { data: users } = await sb.from('User').select('id, email, companyId');
+  // Get emails via Company.userId → User.email
+  const { data: companies } = await sb.from('Company').select('id, userId');
+  const userIds = (companies ?? []).map(c => c.userId).filter(Boolean);
+  const { data: users } = userIds.length
+    ? await sb.from('User').select('id, email').in('id', userIds)
+    : { data: [] };
+  const userEmailMap: Record<string, string> = {};
+  (users ?? []).forEach(u => { userEmailMap[u.id] = u.email; });
+  const companyUserMap: Record<string, string> = {};
+  (companies ?? []).forEach(c => { if (c.userId) companyUserMap[c.id] = c.userId; });
   const emailMap: Record<string, string> = {};
-  (users ?? []).forEach(u => { if (u.companyId) emailMap[u.companyId] = u.email; });
+  Object.entries(companyUserMap).forEach(([cId, uId]) => {
+    if (userEmailMap[uId]) emailMap[cId] = userEmailMap[uId];
+  });
 
   return NextResponse.json(
     (data ?? []).map(c => ({

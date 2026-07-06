@@ -1,3 +1,20 @@
+-- SkillTag table (admin-managed skills, separate from the legacy enum type)
+CREATE TABLE IF NOT EXISTS "SkillTag" (
+  id   TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  label TEXT UNIQUE NOT NULL
+);
+
+-- Seed default skills
+INSERT INTO "SkillTag" (label) VALUES
+  ('GENERAL_HELPER'),
+  ('FORKLIFT_MHE'),
+  ('SCANNER_TRAINED'),
+  ('COLD_STORAGE'),
+  ('LOADING_UNLOADING'),
+  ('PACKING'),
+  ('INVENTORY')
+ON CONFLICT (label) DO NOTHING;
+
 -- PlatformConfig table
 CREATE TABLE IF NOT EXISTS "PlatformConfig" (
   key TEXT PRIMARY KEY,
