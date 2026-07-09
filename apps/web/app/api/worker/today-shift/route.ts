@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-  // Find accepted shift offer for today
+  // Fetch all accepted offers (past + future window)
   const { data: offerData, error: offerErr } = await sb
     .from('ShiftOffer')
     .select(`
@@ -23,56 +23,66 @@ export async function GET(req: NextRequest) {
         date,
         shiftStart,
         shiftEnd,
-        Site (
-          name,
-          address
-        )
+        Site ( name, address )
       )
     `)
     .eq('workerId', worker.id)
     .eq('status', 'ACCEPTED')
-    .limit(100);
+    .limit(200);
 
   if (offerErr) return NextResponse.json({ error: offerErr.message }, { status: 500 });
 
-  // Filter by today's date (Request.date may be stored as string)
-  const todayOffer = (offerData ?? []).find((o: Record<string, unknown>) => {
-    const request = o.Request as Record<string, unknown> | null;
-    return request?.date === today;
-  });
+  const offers = offerData ?? [];
 
-  if (!todayOffer) {
-    return NextResponse.json({ shift: null, checkedIn: false, checkIn: null });
+  // Priority 1: today's shift (most likely to have an active check-in)
+  // Priority 2: most recent past shift that has a CheckIn (worker forgot to check out)
+  // Priority 3: next upcoming shift (so worker can see their schedule)
+  const today_offer = offers.find((o: any) => o.Request?.date === today);
+
+  // If today's shift found, use it. Otherwise find most recent accepted offer.
+  const sorted = [...offers].sort((a: any, b: any) =>
+    (a.Request?.date ?? '').localeCompare(b.Request?.date ?? '')
+  );
+  // upcoming (today + future), then past
+  const upcoming = sorted.filter((o: any) => (o.Request?.date ?? '') >= today);
+  const past = sorted.filter((o: any) => (o.Request?.date ?? '') < today).reverse();
+
+  const chosenOffer = today_offer ?? upcoming[0] ?? past[0] ?? null;
+
+  if (!chosenOffer) {
+    return NextResponse.json({ shift: null, checkedIn: false, checkIn: null, isToday: false });
   }
+
+  const requestId = (chosenOffer as any).requestId;
+  const request = (chosenOffer as any).Request;
+  const site = request?.Site;
+  const shiftDate: string = request?.date ?? '';
+  const isToday = shiftDate === today;
 
   // Check for an existing CheckIn record
   const { data: checkIn } = await sb
     .from('CheckIn')
     .select('*')
     .eq('workerId', worker.id)
-    .eq('requestId', (todayOffer as Record<string, unknown>).requestId)
+    .eq('requestId', requestId)
     .order('checkInAt', { ascending: false })
     .limit(1)
-    .single();
-
-  const request = (todayOffer as Record<string, unknown>).Request as Record<string, unknown> | null;
-  const site = request?.Site as Record<string, unknown> | null;
+    .maybeSingle();
 
   return NextResponse.json({
     shift: {
-      id: todayOffer.id,
-      requestId: (todayOffer as Record<string, unknown>).requestId,
-      request: request
-        ? {
-            id: request.id,
-            date: request.date,
-            shiftStart: request.shiftStart,
-            shiftEnd: request.shiftEnd,
-            site: site ? { name: site.name, address: site.address } : { name: 'Unknown', address: '' },
-          }
-        : null,
+      id: chosenOffer.id,
+      requestId,
+      request: request ? {
+        id: request.id,
+        date: request.date,
+        shiftStart: request.shiftStart,
+        shiftEnd: request.shiftEnd,
+        site: site ? { name: site.name, address: site.address } : { name: 'Unknown', address: '' },
+      } : null,
     },
-    checkedIn: !!checkIn && !checkIn.checkOutTime,
+    isToday,
+    checkedIn: !!checkIn && !checkIn.checkOutAt,
     checkIn: checkIn ?? null,
   });
 }

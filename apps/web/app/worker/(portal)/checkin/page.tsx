@@ -24,6 +24,7 @@ interface CheckInRecord {
 
 interface TodayShift {
   shift: Shift | null;
+  isToday: boolean;
   checkedIn: boolean;
   checkIn: CheckInRecord | null;
 }
@@ -143,21 +144,31 @@ export default function WorkerCheckinPage() {
     return (
       <div style={{ padding: 24, textAlign: "center", paddingTop: 80 }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>📍</div>
-        <p style={{ fontSize: 16, fontWeight: 600, color: "#0F172A" }}>No shift today</p>
+        <p style={{ fontSize: 16, fontWeight: 600, color: "#0F172A" }}>No upcoming shifts</p>
         <p style={{ fontSize: 13, color: "#64748B", marginTop: 6 }}>
-          You don&apos;t have an accepted shift for today.
+          Accept a shift from the Shifts tab to get started.
         </p>
       </div>
     );
   }
 
-  const { shift, checkedIn, checkIn } = data;
+  const { shift, isToday, checkedIn, checkIn } = data;
   const checkedOut = !!checkIn?.checkOutAt;
+
+  function formatShiftDate(d: string) {
+    const dt = new Date(d + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.round((dt.getTime() - today.getTime()) / 86400000);
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Tomorrow";
+    return dt.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  }
 
   return (
     <div style={{ padding: "20px 16px" }}>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: "#0F172A", margin: "0 0 20px" }}>
-        Check In
+        {isToday ? "Check In" : "Upcoming Shift"}
       </h1>
 
       {error && (
@@ -193,7 +204,7 @@ export default function WorkerCheckinPage() {
           {shift.request?.site?.address}
         </p>
         <p style={{ fontSize: 13, color: "#475569", margin: 0 }}>
-          📅 {shift.request?.date} &nbsp;·&nbsp; ⏰ {shift.request?.shiftStart}–{shift.request?.shiftEnd}
+          📅 {formatShiftDate(shift.request?.date ?? "")} &nbsp;·&nbsp; ⏰ {shift.request?.shiftStart}–{shift.request?.shiftEnd}
         </p>
       </div>
 
@@ -248,8 +259,20 @@ export default function WorkerCheckinPage() {
         </div>
       )}
 
+      {/* Not yet shift day */}
+      {!isToday && !checkedIn && !checkedOut && (
+        <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 12, padding: 20, textAlign: "center", marginBottom: 20 }}>
+          <p style={{ fontSize: 14, color: "#1D4ED8", fontWeight: 600, margin: "0 0 4px" }}>
+            Shift confirmed ✓
+          </p>
+          <p style={{ fontSize: 13, color: "#3B82F6", margin: 0 }}>
+            Check-in opens on your shift day.
+          </p>
+        </div>
+      )}
+
       {/* CTA button */}
-      {!checkedOut && (
+      {!checkedOut && isToday && (
         <button
           onClick={checkedIn ? handleCheckOut : handleCheckIn}
           disabled={acting}

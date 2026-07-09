@@ -397,8 +397,8 @@ export default function RequestDetailPage() {
               </div>
             )}
 
-            {/* Check-in Approvals */}
-            {checkins.length > 0 && (
+            {/* Check-in Approvals — always visible once workers are accepted */}
+            {(applications.some(a => a.status === "ACCEPTED") || checkins.length > 0) && (
               <div className="rounded-lg" style={{ background: "var(--surface-raised)", border: "1px solid var(--border)" }}>
                 <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
                   <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", letterSpacing: "0.07em" }}>
@@ -408,6 +408,11 @@ export default function RequestDetailPage() {
                     {checkins.filter(c => !c.isVerified).length} pending
                   </span>
                 </div>
+                {checkins.length === 0 && (
+                  <p className="px-4 py-6 text-sm text-center" style={{ color: "var(--text-muted)" }}>
+                    Waiting for workers to check in on shift day.
+                  </p>
+                )}
                 <div className="divide-y" style={{ borderColor: "var(--border-muted)" }}>
                   {checkins.map((ci) => (
                     <div key={ci.id} className="px-4 py-3 flex items-center gap-4">

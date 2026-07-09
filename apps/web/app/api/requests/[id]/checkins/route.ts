@@ -21,5 +21,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .order('"checkInAt"', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data ?? []);
+  return NextResponse.json((data ?? []).map((c: any) => ({
+    id: c.id,
+    workerId: c.workerId,
+    workerName: c.Worker?.name ?? null,
+    workerPhoto: c.Worker?.photoUrl ?? null,
+    checkInAt: c.checkInAt,
+    checkOutAt: c.checkOutAt,
+    isVerified: c.isVerified,
+    clientApprovedAt: c.clientApprovedAt,
+    hoursAccrued: c.hoursAccrued,
+  })));
 }
