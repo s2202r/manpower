@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, getAuthUser } from '@/lib/supabase-server';
+import { companyFromUser } from '../../_companyFromUser';
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = createServiceClient();
-  const { data: company } = await sb.from('Company').select('id').eq('userId', user.id).single();
+  const company = await companyFromUser(sb, user);
   if (!company) return NextResponse.json([]);
 
   const tomorrow = new Date();

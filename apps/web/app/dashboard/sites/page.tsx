@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { getSites, createSite, updateSite, type Site } from "@/lib/api";
-import { Plus, MapPin, CheckCircle2, XCircle, Edit2, Loader2 } from "lucide-react";
+import { Plus, MapPin, CheckCircle2, XCircle, Edit2, Loader2, Navigation, Link as LinkIcon } from "lucide-react";
 
 export default function SitesPage() {
   const [sites, setSites] = useState<Site[]>([]);
@@ -18,6 +18,8 @@ export default function SitesPage() {
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [radius, setRadius] = useState("150");
+  const [mapsUrl, setMapsUrl] = useState("");
+  const [locating, setLocating] = useState(false);
 
   useEffect(() => {
     getSites()
@@ -28,7 +30,7 @@ export default function SitesPage() {
 
   function openNewForm() {
     setEditSite(null);
-    setName(""); setAddress(""); setCity(""); setLat(""); setLng(""); setRadius("150");
+    setName(""); setAddress(""); setCity(""); setLat(""); setLng(""); setRadius("150"); setMapsUrl("");
     setShowForm(true);
   }
 
@@ -40,14 +42,30 @@ export default function SitesPage() {
     setLat(site.geofence?.lat?.toString() ?? "");
     setLng(site.geofence?.lng?.toString() ?? "");
     setRadius(site.geofence?.radiusMeters?.toString() ?? "150");
+    setMapsUrl((site as any).mapsUrl ?? "");
     setShowForm(true);
+  }
+
+  function useCurrentLocation() {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude.toFixed(6));
+        setLng(pos.coords.longitude.toFixed(6));
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { timeout: 10000 }
+    );
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const body: Partial<Site> = {
+    const body: Partial<Site> & { mapsUrl?: string } = {
       name, address, city,
+      mapsUrl: mapsUrl.trim() || undefined,
       geofence: lat && lng
         ? { lat: parseFloat(lat), lng: parseFloat(lng), radiusMeters: parseInt(radius) }
         : null,
@@ -131,9 +149,28 @@ export default function SitesPage() {
                   className="w-full px-3 py-2 rounded text-sm" style={fieldStyle} />
               </div>
               <div>
-                <p className="text-xs font-medium mb-2" style={{ color: "var(--text-secondary)" }}>
-                  Geofence (optional)
-                </p>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
+                  Google Maps Link (optional)
+                </label>
+                <div className="relative">
+                  <LinkIcon size={12} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
+                  <input type="url" value={mapsUrl} onChange={(e) => setMapsUrl(e.target.value)}
+                    placeholder="https://maps.google.com/..."
+                    className="w-full pl-8 pr-3 py-2 rounded text-sm" style={fieldStyle} />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                    Geofence (optional)
+                  </p>
+                  <button type="button" onClick={useCurrentLocation} disabled={locating}
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded disabled:opacity-50"
+                    style={{ background: "var(--surface-overlay)", color: "var(--accent)", border: "1px solid var(--border)" }}>
+                    {locating ? <Loader2 size={10} className="animate-spin" /> : <Navigation size={10} />}
+                    Use my location
+                  </button>
+                </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs mb-1" style={{ color: "var(--text-muted)" }}>Latitude</label>
@@ -198,6 +235,13 @@ export default function SitesPage() {
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                     {site.city}{site.address ? ` — ${site.address}` : ""}
                   </p>
+                  {(site as any).mapsUrl && (
+                    <a href={(site as any).mapsUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-xs flex items-center gap-1 mt-0.5"
+                      style={{ color: "var(--accent)" }}>
+                      <LinkIcon size={9} /> View on Maps
+                    </a>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   {site.geofence ? (

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, getAuthUser } from '@/lib/supabase-server';
+import { companyFromUser } from '../../_companyFromUser';
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
@@ -7,8 +8,7 @@ export async function GET(req: NextRequest) {
 
   const sb = createServiceClient();
 
-  // Get company for this user
-  const { data: company } = await sb.from('Company').select('id').eq('userId', user.id).single();
+  const company = await companyFromUser(sb, user);
   if (!company) {
     // Return empty summary if no company yet
     return NextResponse.json({

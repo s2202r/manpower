@@ -37,6 +37,7 @@ export interface Site {
   name: string;
   address: string;
   city: string;
+  mapsUrl?: string | null;
   geofence: { lat: number; lng: number; radiusMeters: number } | null;
   active: boolean;
   created_at: string;
