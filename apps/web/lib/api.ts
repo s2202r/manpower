@@ -61,6 +61,7 @@ export interface StaffingRequest {
   recurring: boolean;
   recurrence_rule?: string;
   notes?: string;
+  wage_per_hour?: number | null;
   status: "draft" | "pending" | "confirmed" | "active" | "completed" | "cancelled";
   requested_count: number;
   confirmed_count: number;

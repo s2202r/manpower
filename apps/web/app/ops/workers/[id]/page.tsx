@@ -6,14 +6,17 @@ import { Header } from "@/components/layout/Header";
 import { ReliabilityBadge } from "@/components/workers/ReliabilityBadge";
 import { getWorker, getWorkerAttendance, type Worker, type AttendanceRecord } from "@/lib/api";
 import { formatDate, formatDateTime, formatHours } from "@/lib/utils";
-import { ArrowLeft, Phone, MapPin, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Phone, CheckCircle2, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 export default function WorkerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [worker, setWorker] = useState<Worker | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [noShowLoading, setNoShowLoading] = useState(false);
+  const [noShowDone, setNoShowDone] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -25,6 +28,21 @@ export default function WorkerDetailPage() {
       setLoading(false);
     });
   }, [id]);
+
+  async function markNoShow() {
+    setNoShowLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    await fetch(`/api/worker/${id}/no-show`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    setNoShowLoading(false);
+    setNoShowDone(true);
+    // Refresh worker data
+    const w = await getWorker(id).catch(() => null);
+    if (w) setWorker(w);
+  }
 
   const attendanceRate = attendance.length > 0
     ? ((attendance.filter((a) => a.check_in_time).length / attendance.length) * 100).toFixed(0)
@@ -95,6 +113,16 @@ export default function WorkerDetailPage() {
                       </span>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={markNoShow}
+                      disabled={noShowLoading || noShowDone}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold disabled:opacity-50 transition-opacity"
+                      style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}
+                    >
+                      {noShowLoading ? <Loader2 size={11} className="animate-spin" /> : <AlertTriangle size={11} />}
+                      {noShowDone ? "No-show recorded" : "Mark No-show"}
+                    </button>
                   <span
                     className="text-xs font-medium px-2 py-0.5 rounded capitalize"
                     style={
@@ -107,6 +135,7 @@ export default function WorkerDetailPage() {
                   >
                     {worker.status}
                   </span>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap gap-4 mt-4">

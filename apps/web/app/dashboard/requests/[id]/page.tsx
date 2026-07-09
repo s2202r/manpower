@@ -20,6 +20,16 @@ import { ArrowLeft, MapPin, Clock, Users, RefreshCw, Star, CheckCircle2, XCircle
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+interface CheckIn {
+  id: string;
+  workerId: string;
+  workerName?: string;
+  checkInAt: string;
+  checkOutAt?: string | null;
+  isVerified: boolean;
+  clientApprovedAt?: string | null;
+}
+
 interface Application {
   id: string;
   status: string;
@@ -41,9 +51,14 @@ export default function RequestDetailPage() {
   const [request, setRequest] = useState<StaffingRequest | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [checkins, setCheckins] = useState<CheckIn[]>([]);
   const [loadingReq, setLoadingReq] = useState(true);
   const [loadingAtt, setLoadingAtt] = useState(true);
   const [actioning, setActioning] = useState<string | null>(null);
+  const [approvingCheckin, setApprovingCheckin] = useState<string | null>(null);
+  const [rating, setRating] = useState<Record<string, number>>({});
+  const [ratingNotes, setRatingNotes] = useState<Record<string, string>>({});
+  const [submittingRating, setSubmittingRating] = useState<string | null>(null);
 
   async function loadApplications() {
     const token = await getToken();
@@ -51,6 +66,38 @@ export default function RequestDetailPage() {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     if (res.ok) setApplications(await res.json());
+  }
+
+  async function loadCheckins() {
+    const token = await getToken();
+    const res = await fetch(`/api/requests/${id}/checkins`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (res.ok) setCheckins(await res.json());
+  }
+
+  async function approveCheckin(checkinId: string) {
+    setApprovingCheckin(checkinId);
+    const token = await getToken();
+    await fetch(`/api/requests/${id}/checkins/${checkinId}/approve`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    await loadCheckins();
+    setApprovingCheckin(null);
+  }
+
+  async function submitRating(workerId: string) {
+    const r = rating[workerId];
+    if (!r) return;
+    setSubmittingRating(workerId);
+    const token = await getToken();
+    await fetch(`/api/worker/${workerId}/rate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ requestId: id, rating: r, notes: ratingNotes[workerId] ?? null }),
+    });
+    setSubmittingRating(null);
   }
 
   function load() {
@@ -65,6 +112,7 @@ export default function RequestDetailPage() {
       .catch(() => [])
       .finally(() => setLoadingAtt(false));
     loadApplications();
+    loadCheckins();
   }
 
   async function handleAction(offerId: string, action: "approve" | "reject") {
@@ -342,6 +390,117 @@ export default function RequestDetailPage() {
                             </button>
                           </div>
                         )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Check-in Approvals */}
+            {checkins.length > 0 && (
+              <div className="rounded-lg" style={{ background: "var(--surface-raised)", border: "1px solid var(--border)" }}>
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", letterSpacing: "0.07em" }}>
+                    Check-in Approvals
+                  </p>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                    {checkins.filter(c => !c.isVerified).length} pending
+                  </span>
+                </div>
+                <div className="divide-y" style={{ borderColor: "var(--border-muted)" }}>
+                  {checkins.map((ci) => (
+                    <div key={ci.id} className="px-4 py-3 flex items-center gap-4">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                          {ci.workerName ?? ci.workerId.slice(0, 8)}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                          Checked in: {new Date(ci.checkInAt).toLocaleTimeString()}
+                          {ci.clientApprovedAt && (
+                            <span className="ml-2" style={{ color: "#16A34A" }}>
+                              · Approved at {new Date(ci.clientApprovedAt).toLocaleTimeString()}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      {ci.isVerified ? (
+                        <span className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded" style={{ background: "#F0FDF4", color: "#16A34A" }}>
+                          <CheckCircle2 size={11} /> Approved
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => approveCheckin(ci.id)}
+                          disabled={approvingCheckin === ci.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold disabled:opacity-50"
+                          style={{ background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" }}
+                        >
+                          {approvingCheckin === ci.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+                          Approve Check-in
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Rate Workers */}
+            {applications.filter(a => a.status === "ACCEPTED").length > 0 && (
+              <div className="rounded-lg" style={{ background: "var(--surface-raised)", border: "1px solid var(--border)" }}>
+                <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", letterSpacing: "0.07em" }}>
+                    Rate Workers
+                  </p>
+                </div>
+                <div className="divide-y" style={{ borderColor: "var(--border-muted)" }}>
+                  {applications.filter(a => a.status === "ACCEPTED" && a.worker).map((app) => {
+                    const w = app.worker!;
+                    const selectedRating = rating[w.id] ?? 0;
+                    return (
+                      <div key={app.id} className="px-4 py-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{w.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mb-2">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <button
+                              key={s}
+                              onClick={() => setRating(r => ({ ...r, [w.id]: s }))}
+                              style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                            >
+                              <Star
+                                size={20}
+                                fill={s <= selectedRating ? "#F59E0B" : "none"}
+                                stroke={s <= selectedRating ? "#F59E0B" : "var(--border)"}
+                              />
+                            </button>
+                          ))}
+                          {selectedRating > 0 && (
+                            <span className="text-xs ml-1" style={{ color: "var(--text-muted)" }}>
+                              {["", "Poor", "Fair", "Good", "Very good", "Excellent"][selectedRating]}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Optional notes..."
+                            value={ratingNotes[w.id] ?? ""}
+                            onChange={e => setRatingNotes(n => ({ ...n, [w.id]: e.target.value }))}
+                            className="flex-1 text-xs px-3 py-1.5 rounded"
+                            style={{ background: "var(--surface-overlay)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                          />
+                          <button
+                            onClick={() => submitRating(w.id)}
+                            disabled={!selectedRating || submittingRating === w.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold disabled:opacity-40"
+                            style={{ background: "var(--accent)", color: "#fff" }}
+                          >
+                            {submittingRating === w.id ? <Loader2 size={11} className="animate-spin" /> : null}
+                            Submit Rating
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
