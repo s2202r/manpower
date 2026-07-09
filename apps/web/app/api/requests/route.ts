@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
     guaranteedHeadcount: Math.floor(body.headcount * 0.8),
     bookedHeadcount: 0,
     notes: body.notes,
+    wagePerHour: body.wage_per_hour ?? null,
   }).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

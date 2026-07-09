@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
   let query = sb
     .from('Request')
     .select(`
-      id, date, shiftStart, shiftEnd, headcount, bookedHeadcount, skillTags, notes,
-      Site ( id, name, address, city )
+      id, date, shiftStart, shiftEnd, headcount, bookedHeadcount, skillTags, notes, wagePerHour,
+      Site ( id, name, address, city, lat, lng )
     `)
     .eq('status', 'OPEN')
     .gte('date', today)
@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
     spotsLeft: Math.max(0, r.headcount - (r.bookedHeadcount ?? 0)),
     skillTags: r.skillTags ?? [],
     notes: r.notes ?? null,
-    site: r.Site ? { id: r.Site.id, name: r.Site.name, address: r.Site.address, city: r.Site.city } : null,
+    wagePerHour: r.wagePerHour ?? null,
+    site: r.Site ? { id: r.Site.id, name: r.Site.name, address: r.Site.address, city: r.Site.city, lat: r.Site.lat ?? null, lng: r.Site.lng ?? null } : null,
   })));
 }

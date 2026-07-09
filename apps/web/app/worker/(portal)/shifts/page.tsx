@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Loader2, MapPin, Calendar, Clock, Users, Search, ChevronRight } from "lucide-react";
+import { Loader2, MapPin, Calendar, Clock, Users, Search, ChevronRight, IndianRupee, Navigation } from "lucide-react";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
@@ -10,26 +10,17 @@ interface ShiftOffer {
   id: string;
   status: "PENDING" | "ACCEPTED" | "DECLINED";
   request: {
-    id: string;
-    date: string;
-    shiftStart: string;
-    shiftEnd: string;
-    headcount: number;
-    skillTags: string[];
+    id: string; date: string; shiftStart: string; shiftEnd: string;
+    headcount: number; skillTags: string[];
     site: { name: string; address: string };
   };
 }
 
 interface OpenShift {
-  id: string;
-  date: string;
-  shiftStart: string;
-  shiftEnd: string;
-  headcount: number;
-  spotsLeft: number;
-  skillTags: string[];
-  notes: string | null;
-  site: { id: string; name: string; address: string; city: string } | null;
+  id: string; date: string; shiftStart: string; shiftEnd: string;
+  headcount: number; spotsLeft: number; skillTags: string[];
+  notes: string | null; wagePerHour: number | null;
+  site: { id: string; name: string; address: string; city: string; lat?: number; lng?: number } | null;
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
@@ -44,7 +35,9 @@ function formatLabel(raw: string) {
 }
 
 function formatDate(d: string) {
-  return new Date(d + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  return new Date(d + "T00:00:00").toLocaleDateString("en-IN", {
+    weekday: "short", day: "numeric", month: "short",
+  });
 }
 
 function durationLabel(start: string, end: string) {
@@ -52,9 +45,16 @@ function durationLabel(start: string, end: string) {
   const [eh, em] = end.split(":").map(Number);
   const mins = eh * 60 + em - (sh * 60 + sm);
   if (mins <= 0) return "";
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
+  const h = Math.floor(mins / 60); const m = mins % 60;
   return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function SkillChips({ tags }: { tags: string[] }) {
@@ -120,7 +120,7 @@ function MyShifts() {
   );
 
   if (!shifts.length) return (
-    <EmptyState icon="📋" title="No shift offers yet" sub="Ops will send you offers, or browse open shifts below." />
+    <EmptyState icon="📋" title="No shift offers yet" sub="Ops will send you offers — or browse open shifts." />
   );
 
   return (
@@ -142,7 +142,6 @@ function MyShifts() {
                 {sc.label}
               </span>
             </div>
-
             <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
               <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#475569" }}>
                 <Calendar size={13} /> {formatDate(offer.request.date)}
@@ -152,13 +151,11 @@ function MyShifts() {
                 {dur && <span style={{ color: "#94A3B8", fontSize: 11 }}>({dur})</span>}
               </span>
             </div>
-
             <SkillChips tags={offer.request.skillTags} />
-
             {isPending && (
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                 <button onClick={() => handleAction(offer.id, "accept")} disabled={!!actioning}
-                  style={{ flex: 1, padding: 11, background: "#1D4ED8", color: "#FFF", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: actioning ? 0.6 : 1 }}>
+                  style={{ flex: 1, padding: 11, background: "#1D4ED8", color: "#FFF", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: actioning ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                   {actioning === offer.id ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : "Accept"}
                 </button>
                 <button onClick={() => handleAction(offer.id, "decline")} disabled={!!actioning}
@@ -176,12 +173,18 @@ function MyShifts() {
 
 /* ── Browse tab ─────────────────────────────────────────────────────── */
 
+const RADIUS_OPTIONS = [5, 10, 25, 50];
+
 function BrowseShifts() {
   const [shifts, setShifts] = useState<OpenShift[]>([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState<string | null>(null);
   const [applied, setApplied] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [radiusKm, setRadiusKm] = useState(25);
 
   async function load() {
     const token = await getToken();
@@ -191,6 +194,19 @@ function BrowseShifts() {
   }
 
   useEffect(() => { load(); }, []);
+
+  function useMyLocation() {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    setCityFilter("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocating(false); },
+      () => setLocating(false),
+      { timeout: 10000 }
+    );
+  }
+
+  function clearLocation() { setUserCoords(null); }
 
   async function apply(requestId: string) {
     setApplying(requestId);
@@ -204,14 +220,26 @@ function BrowseShifts() {
     setApplying(null);
   }
 
+  // Unique cities from loaded shifts
+  const cities = Array.from(new Set(shifts.map((s) => s.site?.city).filter(Boolean))) as string[];
+
   const filtered = shifts.filter((s) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      s.site?.name?.toLowerCase().includes(q) ||
-      s.site?.city?.toLowerCase().includes(q) ||
-      s.skillTags.some((t) => t.toLowerCase().includes(q))
-    );
+    // text search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const match = s.site?.name?.toLowerCase().includes(q) ||
+        s.site?.city?.toLowerCase().includes(q) ||
+        s.skillTags.some((t) => t.toLowerCase().includes(q));
+      if (!match) return false;
+    }
+    // geo filter
+    if (userCoords && s.site?.lat != null && s.site?.lng != null) {
+      const dist = haversineKm(userCoords.lat, userCoords.lng, s.site.lat, s.site.lng);
+      if (dist > radiusKm) return false;
+    }
+    // city filter
+    if (cityFilter && s.site?.city !== cityFilter) return false;
+    return true;
   });
 
   if (loading) return (
@@ -222,19 +250,60 @@ function BrowseShifts() {
 
   return (
     <div>
-      {/* Search */}
-      <div style={{ position: "relative", marginBottom: 16 }}>
-        <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94A3B8" }} />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by site, city, or skill…"
-          style={{ width: "100%", padding: "10px 12px 10px 34px", borderRadius: 10, border: "1px solid #E2E8F0", background: "#FFFFFF", fontSize: 13, color: "#0F172A", outline: "none", boxSizing: "border-box" }}
-        />
+      {/* Filters */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+        {/* Search */}
+        <div style={{ position: "relative" }}>
+          <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94A3B8" }} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by site, city, or skill…"
+            style={{ width: "100%", padding: "10px 12px 10px 34px", borderRadius: 10, border: "1px solid #E2E8F0", background: "#FFFFFF", fontSize: 13, color: "#0F172A", outline: "none", boxSizing: "border-box" }} />
+        </div>
+
+        {/* Location row */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {!userCoords ? (
+            <>
+              {/* City dropdown */}
+              <select value={cityFilter} onChange={(e) => setCityFilter(e.target.value)}
+                style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: "1px solid #E2E8F0", background: "#FFFFFF", fontSize: 13, color: cityFilter ? "#0F172A" : "#94A3B8", outline: "none" }}>
+                <option value="">All cities</option>
+                {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <button onClick={useMyLocation} disabled={locating}
+                style={{ display: "flex", alignItems: "center", gap: 5, padding: "9px 12px", borderRadius: 10, border: "1px solid #E2E8F0", background: "#FFFFFF", color: "#1D4ED8", fontSize: 13, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }}>
+                {locating ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <Navigation size={13} />}
+                Near me
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, padding: "9px 12px", borderRadius: 10, border: "1px solid #BBF7D0", background: "#F0FDF4" }}>
+                <Navigation size={13} color="#16A34A" />
+                <span style={{ fontSize: 13, color: "#16A34A", fontWeight: 500 }}>Using your location</span>
+              </div>
+              <select value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}
+                style={{ padding: "9px 10px", borderRadius: 10, border: "1px solid #E2E8F0", background: "#FFFFFF", fontSize: 13, color: "#0F172A", outline: "none" }}>
+                {RADIUS_OPTIONS.map((r) => <option key={r} value={r}>Within {r} km</option>)}
+              </select>
+              <button onClick={clearLocation}
+                style={{ padding: "9px 12px", borderRadius: 10, border: "1px solid #E2E8F0", background: "#FFF", color: "#64748B", fontSize: 13, cursor: "pointer" }}>
+                ✕
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
+      {/* Results count */}
+      {(search || cityFilter || userCoords) && (
+        <p style={{ fontSize: 12, color: "#94A3B8", marginBottom: 12 }}>
+          {filtered.length} shift{filtered.length !== 1 ? "s" : ""} found
+        </p>
+      )}
+
       {filtered.length === 0 ? (
-        <EmptyState icon="🔍" title="No open shifts" sub={search ? "Try a different search term." : "Check back soon — new shifts are posted regularly."} />
+        <EmptyState icon="🔍" title="No open shifts" sub={search || cityFilter || userCoords ? "Try adjusting your filters." : "Check back soon — new shifts are posted regularly."} />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {filtered.map((shift) => {
@@ -242,16 +311,18 @@ function BrowseShifts() {
             const dur = durationLabel(shift.shiftStart, shift.shiftEnd);
             const spotsLabel = shift.spotsLeft === 1 ? "1 spot left" : `${shift.spotsLeft} spots`;
             const urgent = shift.spotsLeft <= 2;
+            const distKm = userCoords && shift.site?.lat != null && shift.site?.lng != null
+              ? Math.round(haversineKm(userCoords.lat, userCoords.lng, shift.site.lat, shift.site.lng) * 10) / 10
+              : null;
             return (
               <div key={shift.id} style={{ background: "#FFFFFF", border: `1px solid ${urgent ? "#FCD34D" : "#E2E8F0"}`, borderRadius: 12, padding: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 15, fontWeight: 700, color: "#0F172A", margin: 0 }}>{shift.site?.name ?? "Unknown site"}</p>
-                    {shift.site?.city && (
-                      <p style={{ fontSize: 12, color: "#64748B", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 3 }}>
-                        <MapPin size={11} /> {shift.site.city}
-                      </p>
-                    )}
+                    <p style={{ fontSize: 12, color: "#64748B", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 3 }}>
+                      <MapPin size={11} /> {shift.site?.city ?? shift.site?.address}
+                      {distKm !== null && <span style={{ color: "#94A3B8" }}> · {distKm} km away</span>}
+                    </p>
                   </div>
                   <span style={{ background: urgent ? "#FEF3C7" : "#F1F5F9", color: urgent ? "#D97706" : "#64748B", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>
                     {spotsLabel}
@@ -269,6 +340,11 @@ function BrowseShifts() {
                   <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#475569" }}>
                     <Users size={13} /> {shift.headcount} workers
                   </span>
+                  {shift.wagePerHour && (
+                    <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 13, fontWeight: 600, color: "#16A34A" }}>
+                      <IndianRupee size={12} /> {shift.wagePerHour}/hr
+                    </span>
+                  )}
                 </div>
 
                 {shift.skillTags.length > 0 && (
@@ -287,27 +363,18 @@ function BrowseShifts() {
                   onClick={() => apply(shift.id)}
                   disabled={isApplied || applying === shift.id}
                   style={{
-                    width: "100%",
-                    padding: 11,
+                    width: "100%", padding: 11,
                     background: isApplied ? "#F0FDF4" : "#1D4ED8",
                     color: isApplied ? "#16A34A" : "#FFFFFF",
                     border: isApplied ? "1px solid #BBF7D0" : "none",
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontWeight: 600,
+                    borderRadius: 8, fontSize: 14, fontWeight: 600,
                     cursor: isApplied || applying === shift.id ? "default" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                  }}
-                >
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}>
                   {applying === shift.id
                     ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Applying…</>
-                    : isApplied
-                    ? "✓ Application Sent"
-                    : <><ChevronRight size={14} /> Apply for this Shift</>
-                  }
+                    : isApplied ? "✓ Application Sent"
+                    : <><ChevronRight size={14} /> Apply for this Shift</>}
                 </button>
               </div>
             );
@@ -329,26 +396,17 @@ export default function WorkerShiftsPage() {
     <div style={{ padding: "20px 16px", paddingBottom: 32 }}>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: "#0F172A", margin: "0 0 16px" }}>Shifts</h1>
 
-      {/* Tab switcher */}
       <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 10, padding: 3, marginBottom: 20 }}>
         {([["mine", "My Shifts"], ["browse", "Browse Open"]] as [Tab, string][]).map(([t, label]) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
+          <button key={t} onClick={() => setTab(t)}
             style={{
-              flex: 1,
-              padding: "8px 0",
-              borderRadius: 8,
-              border: "none",
+              flex: 1, padding: "8px 0", borderRadius: 8, border: "none",
               background: tab === t ? "#FFFFFF" : "transparent",
               color: tab === t ? "#0F172A" : "#64748B",
-              fontSize: 13,
-              fontWeight: tab === t ? 600 : 400,
-              cursor: "pointer",
-              boxShadow: tab === t ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+              fontSize: 13, fontWeight: tab === t ? 600 : 400,
+              cursor: "pointer", boxShadow: tab === t ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
               transition: "all 0.15s",
-            }}
-          >
+            }}>
             {label}
           </button>
         ))}

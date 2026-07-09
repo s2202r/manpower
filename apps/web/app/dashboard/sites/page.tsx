@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { getSites, createSite, updateSite, type Site } from "@/lib/api";
 import { Plus, MapPin, CheckCircle2, XCircle, Edit2, Loader2, Navigation, Link as LinkIcon } from "lucide-react";
+import { INDIA_STATES } from "@/lib/india-locations";
 
 export default function SitesPage() {
   const [sites, setSites] = useState<Site[]>([]);
@@ -14,6 +15,7 @@ export default function SitesPage() {
 
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [state, setState] = useState("");
   const [city, setCity] = useState("");
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
@@ -30,7 +32,7 @@ export default function SitesPage() {
 
   function openNewForm() {
     setEditSite(null);
-    setName(""); setAddress(""); setCity(""); setLat(""); setLng(""); setRadius("150"); setMapsUrl("");
+    setName(""); setAddress(""); setState(""); setCity(""); setLat(""); setLng(""); setRadius("150"); setMapsUrl("");
     setShowForm(true);
   }
 
@@ -38,6 +40,7 @@ export default function SitesPage() {
     setEditSite(site);
     setName(site.name);
     setAddress(site.address);
+    setState("");
     setCity(site.city);
     setLat(site.geofence?.lat?.toString() ?? "");
     setLng(site.geofence?.lng?.toString() ?? "");
@@ -64,7 +67,7 @@ export default function SitesPage() {
     e.preventDefault();
     setSaving(true);
     const body: Partial<Site> & { mapsUrl?: string } = {
-      name, address, city,
+      name, address, city: city || state,
       mapsUrl: mapsUrl.trim() || undefined,
       geofence: lat && lng
         ? { lat: parseFloat(lat), lng: parseFloat(lng), radiusMeters: parseInt(radius) }
@@ -135,10 +138,25 @@ export default function SitesPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
+                    State *
+                  </label>
+                  <select required value={state} onChange={(e) => { setState(e.target.value); setCity(""); }}
+                    className="w-full px-3 py-2 rounded text-sm" style={fieldStyle}>
+                    <option value="">Select state…</option>
+                    {INDIA_STATES.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
                     City *
                   </label>
-                  <input required value={city} onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-3 py-2 rounded text-sm" style={fieldStyle} />
+                  <select required value={city} onChange={(e) => setCity(e.target.value)}
+                    className="w-full px-3 py-2 rounded text-sm" style={fieldStyle} disabled={!state}>
+                    <option value="">Select city…</option>
+                    {(INDIA_STATES.find((s) => s.name === state)?.cities ?? []).map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>

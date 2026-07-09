@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSites, createRequest, type Site } from "@/lib/api";
-import { Loader2, MapPin, Calendar, Clock, Users, Tag, RefreshCw, FileText, ChevronRight } from "lucide-react";
+import { Loader2, MapPin, Calendar, Clock, Users, Tag, RefreshCw, FileText, ChevronRight, IndianRupee } from "lucide-react";
 
 interface SkillCategory {
   id: string;
@@ -43,6 +43,7 @@ export function RequestForm() {
   const [recurring, setRecurring] = useState(false);
   const [recurrenceRule, setRecurrenceRule] = useState("FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR");
   const [notes, setNotes] = useState("");
+  const [wagePerHour, setWagePerHour] = useState("");
 
   useEffect(() => {
     getSites().then(setSites).catch(() => {});
@@ -76,6 +77,7 @@ export function RequestForm() {
         recurring,
         recurrence_rule: recurring ? recurrenceRule : undefined,
         notes: notes.trim() || undefined,
+        wage_per_hour: wagePerHour ? parseFloat(wagePerHour) : undefined,
       });
       router.push(`/dashboard/requests/${req.id}`);
     } catch (err: unknown) {
@@ -209,11 +211,11 @@ export function RequestForm() {
         )}
       </div>
 
-      {/* Section 3 — Headcount */}
+      {/* Section 3 — Headcount & Pay */}
       <div className={card} style={cardStyle}>
         <div className="flex items-center gap-2 pb-1" style={{ borderBottom: "1px solid var(--border-muted)" }}>
           <Users size={14} style={{ color: "var(--accent)" }} />
-          <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Headcount</span>
+          <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Headcount & Pay</span>
         </div>
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => setHeadcount((n) => Math.max(1, n - 1))}
@@ -230,6 +232,21 @@ export function RequestForm() {
             className="w-8 h-8 rounded flex items-center justify-center text-lg font-medium transition-opacity hover:opacity-70"
             style={{ background: "var(--surface-overlay)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>+</button>
           <span className="text-sm" style={{ color: "var(--text-muted)" }}>workers needed</span>
+        </div>
+        <div>
+          <label style={labelStyle}>Worker Pay Rate (per hour)</label>
+          <div className="relative">
+            <IndianRupee size={12} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
+            <input
+              type="number" min={0} step={10}
+              value={wagePerHour}
+              onChange={(e) => setWagePerHour(e.target.value)}
+              placeholder="e.g. 80"
+              className="tabular-nums"
+              style={{ ...fieldStyle, paddingLeft: 28 }}
+            />
+          </div>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Workers see this before applying. Leave blank to keep confidential.</p>
         </div>
       </div>
 
