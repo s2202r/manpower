@@ -60,6 +60,7 @@ export interface StaffingRequest {
   skill_tags: string[];
   recurring: boolean;
   recurrence_rule?: string;
+  notes?: string;
   status: "draft" | "pending" | "confirmed" | "active" | "completed" | "cancelled";
   requested_count: number;
   confirmed_count: number;
