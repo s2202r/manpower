@@ -55,9 +55,9 @@ export function RequestForm() {
       .catch(() => {});
   }, []);
 
-  function toggleSkill(skillId: string) {
+  function toggleSkill(skillLabel: string) {
     setSelectedSkills((prev) =>
-      prev.includes(skillId) ? prev.filter((s) => s !== skillId) : [...prev, skillId]
+      prev.includes(skillLabel) ? prev.filter((s) => s !== skillLabel) : [...prev, skillLabel]
     );
   }
 
@@ -251,7 +251,7 @@ export function RequestForm() {
         {categories.length > 0 && (
           <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
             {categories.map((cat) => {
-              const count = cat.skills.filter((s) => selectedSkills.includes(s.id)).length;
+              const count = cat.skills.filter((s) => selectedSkills.includes(s.label)).length;
               const active = cat.id === activeCategory;
               return (
                 <button
@@ -281,12 +281,12 @@ export function RequestForm() {
         {/* Skill chips */}
         <div className="flex flex-wrap gap-2">
           {(activeCat?.skills ?? []).map((skill) => {
-            const active = selectedSkills.includes(skill.id);
+            const active = selectedSkills.includes(skill.label);
             return (
               <button
                 key={skill.id}
                 type="button"
-                onClick={() => toggleSkill(skill.id)}
+                onClick={() => toggleSkill(skill.label)}
                 className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
                 style={
                   active
