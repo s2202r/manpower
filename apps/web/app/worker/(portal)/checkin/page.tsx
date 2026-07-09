@@ -11,14 +11,14 @@ interface Shift {
     date: string;
     shiftStart: string;
     shiftEnd: string;
-    site: { name: string; location: string };
+    site: { name: string; address: string };
   };
 }
 
 interface CheckInRecord {
   id: string;
-  checkInTime: string;
-  checkOutTime: string | null;
+  checkInAt: string;
+  checkOutAt: string | null;
   hoursAccrued: number | null;
 }
 
@@ -53,8 +53,8 @@ export default function WorkerCheckinPage() {
     if (res.ok) {
       const d = await res.json();
       setData(d);
-      if (d.checkedIn && d.checkIn?.checkInTime && !d.checkIn.checkOutTime) {
-        startTimer(d.checkIn.checkInTime);
+      if (d.checkedIn && d.checkIn?.checkInAt && !d.checkIn.checkOutAt) {
+        startTimer(d.checkIn.checkInAt);
       }
     }
     setLoading(false);
@@ -152,7 +152,7 @@ export default function WorkerCheckinPage() {
   }
 
   const { shift, checkedIn, checkIn } = data;
-  const checkedOut = !!checkIn?.checkOutTime;
+  const checkedOut = !!checkIn?.checkOutAt;
 
   return (
     <div style={{ padding: "20px 16px" }}>
@@ -190,7 +190,7 @@ export default function WorkerCheckinPage() {
           {shift.request?.site?.name}
         </p>
         <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 4px" }}>
-          {shift.request?.site?.location}
+          {shift.request?.site?.address}
         </p>
         <p style={{ fontSize: 13, color: "#475569", margin: 0 }}>
           📅 {shift.request?.date} &nbsp;·&nbsp; ⏰ {shift.request?.shiftStart}–{shift.request?.shiftEnd}

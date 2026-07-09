@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await sb.from('CheckIn').insert({
     workerId: worker.id,
     requestId: request_id,
-    checkInTime: new Date().toISOString(),
+    checkInAt: new Date().toISOString(),
     locationVerified: !!(lat && lng),
     hoursAccrued: 0,
   }).select().single();

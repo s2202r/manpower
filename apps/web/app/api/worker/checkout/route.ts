@@ -8,15 +8,15 @@ export async function POST(req: NextRequest) {
   const { checkin_id } = await req.json();
   const sb = createServiceClient();
 
-  const { data: checkIn } = await sb.from('CheckIn').select('checkInTime').eq('id', checkin_id).single();
+  const { data: checkIn } = await sb.from('CheckIn').select('"checkInAt"').eq('id', checkin_id).single();
   if (!checkIn) return NextResponse.json({ error: 'Check-in not found' }, { status: 404 });
 
   const checkOutTime = new Date();
-  const checkInTime = new Date((checkIn as any).checkInTime);
+  const checkInTime = new Date((checkIn as any).checkInAt);
   const hoursAccrued = Math.round(((checkOutTime.getTime() - checkInTime.getTime()) / 3600000) * 100) / 100;
 
   const { data, error } = await sb.from('CheckIn')
-    .update({ checkOutTime: checkOutTime.toISOString(), hoursAccrued })
+    .update({ checkOutAt: checkOutTime.toISOString(), hoursAccrued })
     .eq('id', checkin_id)
     .select().single();
 

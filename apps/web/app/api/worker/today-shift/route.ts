@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         shiftEnd,
         Site (
           name,
-          location
+          address
         )
       )
     `)
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     .select('*')
     .eq('workerId', worker.id)
     .eq('requestId', (todayOffer as Record<string, unknown>).requestId)
-    .order('checkInTime', { ascending: false })
+    .order('checkInAt', { ascending: false })
     .limit(1)
     .single();
 
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
             date: request.date,
             shiftStart: request.shiftStart,
             shiftEnd: request.shiftEnd,
-            site: site ? { name: site.name, location: site.location } : { name: 'Unknown', location: '' },
+            site: site ? { name: site.name, address: site.address } : { name: 'Unknown', address: '' },
           }
         : null,
     },
