@@ -152,7 +152,7 @@ export default function WorkerCheckinPage() {
     );
   }
 
-  const { shift, isToday, checkedIn, checkIn } = data;
+  const { shift, checkedIn, checkIn } = data;
   const checkedOut = !!checkIn?.checkOutAt;
 
   function formatShiftDate(d: string) {
@@ -164,6 +164,11 @@ export default function WorkerCheckinPage() {
     if (diff === 1) return "Tomorrow";
     return dt.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
   }
+
+  // Compute isToday client-side (avoids UTC vs IST mismatch from server)
+  const isToday = shift?.request?.date
+    ? formatShiftDate(shift.request.date) === "Today"
+    : false;
 
   return (
     <div style={{ padding: "20px 16px" }}>
