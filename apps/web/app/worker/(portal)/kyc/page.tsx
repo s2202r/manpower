@@ -249,6 +249,12 @@ export default function WorkerKycPage() {
             Save Bank Details
           </button>
         </form>
+
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #F1F5F9" }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: "#64748B", margin: "0 0 4px" }}>Cancelled Cheque / Passbook</p>
+          <p style={{ fontSize: 11, color: "#94A3B8", margin: "0 0 8px" }}>Upload for faster bank verification</p>
+          <FileUploadButton label="Cancelled cheque or passbook" accept="image/*,.pdf" type="bank_cheque" workerId={worker.id} onDone={load} />
+        </div>
       </div>
     </div>
   );

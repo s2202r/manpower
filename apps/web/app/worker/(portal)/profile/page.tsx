@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Loader2, Pencil, Check, X } from "lucide-react";
+import { Loader2, Pencil, Check, X, ChevronRight } from "lucide-react";
 
 interface SkillCategory { id: string; name: string; skills: { id: string; label: string }[]; }
 
@@ -297,18 +298,30 @@ export default function WorkerProfilePage() {
       )}
 
       {/* KYC */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: "#0F172A", margin: 0 }}>KYC Verification</p>
-            <p style={{ fontSize: 12, color: "#64748B", margin: "3px 0 0" }}>Identity verification required for payouts</p>
+      <Link href="/worker/kyc" style={{ textDecoration: "none", display: "block", marginBottom: 24 }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: 12, padding: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#0F172A", margin: 0 }}>KYC Verification</p>
+              <p style={{ fontSize: 12, color: "#64748B", margin: "3px 0 0" }}>Identity verification required for payouts</p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {(() => {
+                const s = profile.kycStatus ?? "PENDING";
+                const map: Record<string, { bg: string; color: string; label: string }> = {
+                  APPROVED:  { bg: "#F0FDF4", color: "#16A34A", label: "Approved" },
+                  SUBMITTED: { bg: "#EFF6FF", color: "#1D4ED8", label: "Under Review" },
+                  PENDING:   { bg: "#FFFBEB", color: "#D97706", label: "Pending" },
+                  REJECTED:  { bg: "#FEF2F2", color: "#DC2626", label: "Rejected" },
+                };
+                const { bg, color, label } = map[s] ?? map.PENDING;
+                return <span style={{ background: bg, color, borderRadius: 20, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>{label}</span>;
+              })()}
+              <ChevronRight size={16} color="#94A3B8" />
+            </div>
           </div>
-          <span style={{ background: "#FFFBEB", color: "#D97706", borderRadius: 20, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>
-            {profile.kycStatus ?? "Pending"}
-          </span>
         </div>
-        <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 10 }}>Full KYC flow coming soon</p>
-      </div>
+      </Link>
 
       {/* Sign out */}
       {!editing && (
