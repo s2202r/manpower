@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         Site (
           id,
           name,
-          location
+          address
         )
       )
     `)
@@ -51,8 +51,8 @@ export async function GET(req: NextRequest) {
             headcount: request.headcount,
             skillTags: request.skillTags ?? [],
             site: site
-              ? { name: site.name, location: site.location }
-              : { name: 'Unknown', location: '' },
+              ? { name: site.name, address: site.address }
+              : { name: 'Unknown', address: '' },
           }
         : null,
     };

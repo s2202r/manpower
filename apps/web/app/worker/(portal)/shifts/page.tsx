@@ -15,7 +15,7 @@ interface ShiftOffer {
     skillTags: string[];
     site: {
       name: string;
-      location: string;
+      address: string;
     };
   };
 }
@@ -133,7 +133,7 @@ export default function WorkerShiftsPage() {
                       {offer.request.site?.name ?? "Unknown site"}
                     </p>
                     <p style={{ fontSize: 12, color: "#64748B", margin: "2px 0 0" }}>
-                      {offer.request.site?.location}
+                      {offer.request.site?.address}
                     </p>
                   </div>
                   <span
