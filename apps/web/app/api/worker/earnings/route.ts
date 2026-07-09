@@ -18,19 +18,19 @@ export async function GET(req: NextRequest) {
 
   const { data: checkIns } = await sb
     .from('CheckIn')
-    .select('id, checkInTime, checkOutTime, hoursAccrued, requestId, Request(date, shiftStart, shiftEnd, Site(name))')
+    .select('id, "checkInAt", "checkOutAt", "hoursWorked", "requestId", Request(date, shiftStart, shiftEnd, Site(name))')
     .eq('workerId', (worker as any).id)
-    .not('checkOutTime', 'is', null)
-    .gte('checkInTime', startOfMonth.toISOString())
-    .order('checkInTime', { ascending: false });
+    .not('checkOutAt', 'is', null)
+    .gte('checkInAt', startOfMonth.toISOString())
+    .order('"checkInAt"', { ascending: false });
 
   const shifts = (checkIns ?? []).map((c: any) => ({
     id: c.id,
     date: c.Request?.date,
     site: c.Request?.Site?.name ?? 'Unknown site',
-    hours: c.hoursAccrued ?? 0,
+    hours: c.hoursWorked ?? 0,
     rate: HOURLY_RATE,
-    amount: Math.round((c.hoursAccrued ?? 0) * HOURLY_RATE),
+    amount: Math.round((c.hoursWorked ?? 0) * HOURLY_RATE),
   }));
 
   const total_month = shifts.reduce((sum, s) => sum + s.amount, 0);

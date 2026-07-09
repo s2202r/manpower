@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const { data, error } = await sb
     .from('CheckIn')
-    .select('id, "workerId", "checkInAt", "checkOutAt", "clientApprovedAt", "isVerified", "hoursAccrued", Worker(id, name, photoUrl)')
+    .select('id, "workerId", "checkInAt", "checkOutAt", "clientApprovedAt", "isVerified", "hoursWorked", Worker(id, name, photoUrl)')
     .eq('requestId', params.id)
     .order('"checkInAt"', { ascending: true });
 
@@ -30,6 +30,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     checkOutAt: c.checkOutAt,
     isVerified: c.isVerified,
     clientApprovedAt: c.clientApprovedAt,
-    hoursAccrued: c.hoursAccrued,
+    hoursWorked: c.hoursWorked,
   })));
 }

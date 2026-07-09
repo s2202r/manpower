@@ -13,10 +13,10 @@ export async function POST(req: NextRequest) {
 
   const checkOutTime = new Date();
   const checkInTime = new Date((checkIn as any).checkInAt);
-  const hoursAccrued = Math.round(((checkOutTime.getTime() - checkInTime.getTime()) / 3600000) * 100) / 100;
+  const hoursWorked = Math.round(((checkOutTime.getTime() - checkInTime.getTime()) / 3600000) * 100) / 100;
 
   const { data, error } = await sb.from('CheckIn')
-    .update({ checkOutAt: checkOutTime.toISOString(), hoursAccrued })
+    .update({ checkOutAt: checkOutTime.toISOString(), hoursWorked })
     .eq('id', checkin_id)
     .select().single();
 

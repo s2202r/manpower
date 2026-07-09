@@ -19,7 +19,7 @@ interface CheckInRecord {
   id: string;
   checkInAt: string;
   checkOutAt: string | null;
-  hoursAccrued: number | null;
+  hoursWorked: number | null;
 }
 
 interface TodayShift {
@@ -259,7 +259,7 @@ export default function WorkerCheckinPage() {
             ✓ Shift complete
           </p>
           <p style={{ fontSize: 32, fontWeight: 700, color: "#0F172A", margin: 0 }}>
-            {(checkIn.hoursAccrued ?? 0).toFixed(2)} hrs
+            {(checkIn.hoursWorked ?? 0).toFixed(2)} hrs
           </p>
         </div>
       )}
