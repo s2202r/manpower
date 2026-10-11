@@ -73,7 +73,7 @@ export default async function TaskFeedPage({
           </div>
         ) : (
           tasks.map(task => {
-            const cat = task.categories as { names: Record<string, string>; icon: string } | null
+            const cat = task.categories as unknown as { names: Record<string, string>; icon: string } | null
             return (
               <Link key={task.id} href={`/tasks/${task.id}`}
                 className="block rounded-2xl bg-white p-5 shadow-sm hover:shadow-md transition-shadow">

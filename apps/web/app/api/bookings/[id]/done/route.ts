@@ -1,0 +1,40 @@
+import { createClient } from '@/lib/supabase/server'
+import { canTransition } from '@taim/core'
+import { NextResponse } from 'next/server'
+import crypto from 'crypto'
+
+export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: bookingId } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('id, task_id, tasker_id, escrow_state')
+    .eq('id', bookingId)
+    .single()
+
+  if (!booking) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (booking.tasker_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (booking.escrow_state !== 'held') return NextResponse.json({ error: 'Payment not held' }, { status: 400 })
+
+  const { data: task } = await supabase.from('tasks').select('status').eq('id', booking.task_id).single()
+  if (!canTransition(task?.status as 'in_progress', 'tasker_done', 'tasker')) {
+    return NextResponse.json({ error: 'Invalid state transition' }, { status: 400 })
+  }
+
+  // Generate 6-digit OTP for poster to confirm
+  const otp = String(Math.floor(100000 + Math.random() * 900000))
+  const otpHash = crypto.createHash('sha256').update(otp).digest('hex')
+
+  await supabase.from('tasks').update({ status: 'tasker_done' }).eq('id', booking.task_id)
+  await supabase.from('bookings').update({
+    completion_otp_hash: otpHash,
+    auto_release_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+  }).eq('id', bookingId)
+
+  // In production, send OTP to poster via notification/WhatsApp.
+  // For now, return it in the response (dev only).
+  return NextResponse.json({ ok: true, otp: process.env.NODE_ENV === 'development' ? otp : undefined })
+}

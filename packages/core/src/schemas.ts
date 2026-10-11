@@ -8,7 +8,7 @@ export const TaskStateSchema = z.enum([
   'tasker_done', 'completed', 'paid_out',
   'cancelled', 'disputed', 'expired',
 ])
-export type TaskState = z.infer<typeof TaskStateSchema>
+// TaskState type is canonical in task-state-machine.ts
 
 export const ProfileSchema = z.object({
   id: z.string().uuid(),

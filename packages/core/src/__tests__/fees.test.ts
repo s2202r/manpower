@@ -46,4 +46,9 @@ describe('calculateFees', () => {
   it('throws on zero amount', () => {
     expect(() => calculateFees({ amountPaise: 0n, taskerCompletedTasks: 0, taskerFirstTaskAt: null })).toThrow()
   })
+
+  it('total charged to poster is amount + poster fee + GST on poster fee', () => {
+    const r = calculateFees({ amountPaise: 100000n, taskerCompletedTasks: 0, taskerFirstTaskAt: null })
+    expect(r.totalChargedToPosterpaise).toBe(100000n + r.posterFeePaise + r.gstOnPosterFeePaise)
+  })
 })

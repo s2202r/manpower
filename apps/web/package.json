@@ -13,6 +13,7 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@taim/config": "workspace:*",
+    "@taim/core": "workspace:*",
     "@taim/i18n": "workspace:*",
     "next": "^15.1.3",
     "react": "^19.0.0",

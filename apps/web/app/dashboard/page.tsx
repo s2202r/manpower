@@ -103,7 +103,7 @@ export default async function DashboardPage() {
             <h2 className="mb-3 text-lg font-bold text-gray-900">My offers</h2>
             <div className="space-y-3">
               {myOffers.map(offer => {
-                const task = offer.tasks as { id: string; title: string; status: string } | null
+                const task = offer.tasks as unknown as { id: string; title: string; status: string } | null
                 return (
                   <Link key={offer.id} href={`/tasks/${task?.id}`}
                     className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm hover:shadow-md transition-shadow">

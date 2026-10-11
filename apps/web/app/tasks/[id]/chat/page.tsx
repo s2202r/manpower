@@ -70,7 +70,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
           senderId: m.sender_id,
           body: m.body,
           createdAt: m.created_at,
-          senderName: (m.profiles as { name: string } | null)?.name ?? 'User',
+          senderName: (m.profiles as unknown as { name: string } | null)?.name ?? 'User',
         }))}
       />
     </main>
