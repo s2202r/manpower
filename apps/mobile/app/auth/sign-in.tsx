@@ -2,12 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { APP_NAME } from '@taim/config'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL!,
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-)
+import { supabase } from '@/lib/supabase'
 
 export default function SignInScreen() {
   const router = useRouter()
