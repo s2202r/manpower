@@ -1,0 +1,26 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# builds
+.next
+dist
+out
+build
+
+# turbo
+.turbo
+
+# env
+.env
+.env.local
+.env.production
+
+# misc
+.DS_Store
+*.tsbuildinfo
+
+# supabase
+supabase/.branches
+supabase/.temp

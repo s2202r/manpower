@@ -1,0 +1,81 @@
+{
+  "_meta": { "locale": "en", "direction": "ltr", "needs_review": false },
+  "app": {
+    "name": "Taim",
+    "tagline": "No time? Put it on Taim."
+  },
+  "auth": {
+    "sign_in": "Sign in",
+    "sign_up": "Sign up",
+    "email": "Email address",
+    "password": "Password",
+    "magic_link": "Send magic link",
+    "magic_link_sent": "Check your email for a sign-in link.",
+    "or": "or",
+    "sign_in_with_email": "Sign in with email & password",
+    "sign_in_with_magic_link": "Sign in with magic link",
+    "forgot_password": "Forgot password?",
+    "reset_password": "Reset password",
+    "create_account": "Create account",
+    "already_have_account": "Already have an account?",
+    "no_account": "Don't have an account?"
+  },
+  "onboarding": {
+    "choose_language": "Choose your language",
+    "choose_role": "How will you use Taim?",
+    "role_poster": "I need help with tasks",
+    "role_tasker": "I want to earn doing tasks",
+    "role_both": "Both",
+    "your_name": "Your name",
+    "name_placeholder": "Full name",
+    "categories_header": "What kind of tasks can you do?",
+    "work_zones_header": "Where do you work?",
+    "remote_toggle": "I can also do remote tasks",
+    "continue": "Continue",
+    "finish": "Finish setup"
+  },
+  "home": {
+    "hero_heading": "Get any task done, fast.",
+    "hero_sub": "Post a task, get offers from verified Taskers nearby.",
+    "post_task": "Post a task",
+    "browse_tasks": "Browse tasks",
+    "how_it_works": "How it works",
+    "step1_title": "Post your task",
+    "step1_body": "Describe what you need, set a budget, and pick a time.",
+    "step2_title": "Get offers",
+    "step2_body": "Verified Taskers nearby send you offers.",
+    "step3_title": "Get it done",
+    "step3_body": "Accept an offer, pay securely, and confirm when done."
+  },
+  "tasks": {
+    "status_draft": "Draft",
+    "status_open": "Open",
+    "status_assigned": "Assigned",
+    "status_in_progress": "In progress",
+    "status_tasker_done": "Pending confirmation",
+    "status_completed": "Completed",
+    "status_paid_out": "Paid out",
+    "status_cancelled": "Cancelled",
+    "status_disputed": "Disputed",
+    "status_expired": "Expired"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong. Please try again.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "from": "From",
+    "to": "To",
+    "of": "of"
+  }
+}

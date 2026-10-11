@@ -1,0 +1,81 @@
+{
+  "_meta": { "locale": "hi", "direction": "ltr", "needs_review": true },
+  "app": {
+    "name": "Taim",
+    "tagline": "Taim nahi hai? Taim pe daal do."
+  },
+  "auth": {
+    "sign_in": "साइन इन करें",
+    "sign_up": "साइन अप करें",
+    "email": "ईमेल पता",
+    "password": "पासवर्ड",
+    "magic_link": "मैजिक लिंक भेजें",
+    "magic_link_sent": "साइन-इन लिंक के लिए अपना ईमेल देखें।",
+    "or": "या",
+    "sign_in_with_email": "ईमेल और पासवर्ड से साइन इन",
+    "sign_in_with_magic_link": "मैजिक लिंक से साइन इन",
+    "forgot_password": "पासवर्ड भूल गए?",
+    "reset_password": "पासवर्ड रीसेट करें",
+    "create_account": "अकाउंट बनाएं",
+    "already_have_account": "क्या आपके पास पहले से अकाउंट है?",
+    "no_account": "अकाउंट नहीं है?"
+  },
+  "onboarding": {
+    "choose_language": "अपनी भाषा चुनें",
+    "choose_role": "आप Taim का उपयोग कैसे करेंगे?",
+    "role_poster": "मुझे काम करवाना है",
+    "role_tasker": "मैं काम करके कमाना चाहता हूं",
+    "role_both": "दोनों",
+    "your_name": "आपका नाम",
+    "name_placeholder": "पूरा नाम",
+    "categories_header": "आप किस तरह के काम कर सकते हैं?",
+    "work_zones_header": "आप कहां काम करते हैं?",
+    "remote_toggle": "मैं रिमोट काम भी कर सकता/सकती हूं",
+    "continue": "जारी रखें",
+    "finish": "सेटअप पूरा करें"
+  },
+  "home": {
+    "hero_heading": "कोई भी काम, जल्दी करवाएं।",
+    "hero_sub": "काम पोस्ट करें, पास के Taskers से ऑफर पाएं।",
+    "post_task": "काम पोस्ट करें",
+    "browse_tasks": "काम देखें",
+    "how_it_works": "यह कैसे काम करता है",
+    "step1_title": "अपना काम पोस्ट करें",
+    "step1_body": "बताएं आपको क्या चाहिए, बजट सेट करें, समय चुनें।",
+    "step2_title": "ऑफर पाएं",
+    "step2_body": "पास के verified Taskers आपको ऑफर भेजते हैं।",
+    "step3_title": "काम करवाएं",
+    "step3_body": "ऑफर स्वीकार करें, सुरक्षित भुगतान करें, काम होने पर confirm करें।"
+  },
+  "tasks": {
+    "status_draft": "ड्राफ्ट",
+    "status_open": "खुला",
+    "status_assigned": "असाइन किया गया",
+    "status_in_progress": "जारी है",
+    "status_tasker_done": "पुष्टि बाकी",
+    "status_completed": "पूरा हो गया",
+    "status_paid_out": "भुगतान किया गया",
+    "status_cancelled": "रद्द किया गया",
+    "status_disputed": "विवाद में",
+    "status_expired": "समय सीमा समाप्त"
+  },
+  "common": {
+    "loading": "लोड हो रहा है…",
+    "error": "कुछ गलत हुआ। कृपया पुनः प्रयास करें।",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "back": "वापस",
+    "next": "आगे",
+    "confirm": "पुष्टि करें",
+    "delete": "हटाएं",
+    "edit": "संपादित करें",
+    "view": "देखें",
+    "close": "बंद करें",
+    "search": "खोजें",
+    "filter": "फ़िल्टर",
+    "sort": "क्रमबद्ध करें",
+    "from": "से",
+    "to": "तक",
+    "of": "का"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "_meta": { "locale": "ur", "direction": "rtl", "needs_review": true },
+  "app": {
+    "name": "Taim",
+    "tagline": "وقت نہیں؟ Taim پر ڈال دو۔"
+  },
+  "auth": {
+    "sign_in": "سائن ان کریں",
+    "sign_up": "سائن اپ کریں",
+    "email": "ای میل پتہ",
+    "password": "پاس ورڈ",
+    "magic_link": "میجک لنک بھیجیں",
+    "magic_link_sent": "سائن ان لنک کے لیے اپنا ای میل دیکھیں۔",
+    "or": "یا",
+    "sign_in_with_email": "ای میل اور پاس ورڈ سے سائن ان",
+    "sign_in_with_magic_link": "میجک لنک سے سائن ان",
+    "forgot_password": "پاس ورڈ بھول گئے؟",
+    "reset_password": "پاس ورڈ ری سیٹ کریں",
+    "create_account": "اکاؤنٹ بنائیں",
+    "already_have_account": "کیا آپ کا پہلے سے اکاؤنٹ ہے؟",
+    "no_account": "اکاؤنٹ نہیں ہے؟"
+  },
+  "onboarding": {
+    "choose_language": "اپنی زبان منتخب کریں",
+    "choose_role": "آپ Taim کا استعمال کیسے کریں گے؟",
+    "role_poster": "مجھے کام کروانا ہے",
+    "role_tasker": "میں کام کر کے کمانا چاہتا ہوں",
+    "role_both": "دونوں",
+    "your_name": "آپ کا نام",
+    "name_placeholder": "پورا نام",
+    "categories_header": "آپ کس قسم کے کام کر سکتے ہیں؟",
+    "work_zones_header": "آپ کہاں کام کرتے ہیں؟",
+    "remote_toggle": "میں ریموٹ کام بھی کر سکتا/سکتی ہوں",
+    "continue": "جاری رکھیں",
+    "finish": "سیٹ اپ مکمل کریں"
+  },
+  "home": {
+    "hero_heading": "کوئی بھی کام، جلدی کروائیں۔",
+    "hero_sub": "کام پوسٹ کریں، قریبی Taskers سے آفر پائیں۔",
+    "post_task": "کام پوسٹ کریں",
+    "browse_tasks": "کام دیکھیں",
+    "how_it_works": "یہ کیسے کام کرتا ہے",
+    "step1_title": "اپنا کام پوسٹ کریں",
+    "step1_body": "بتائیں آپ کو کیا چاہیے، بجٹ سیٹ کریں، وقت چنیں۔",
+    "step2_title": "آفر پائیں",
+    "step2_body": "قریبی verified Taskers آپ کو آفر بھیجتے ہیں۔",
+    "step3_title": "کام کروائیں",
+    "step3_body": "آفر قبول کریں، محفوظ ادائیگی کریں، کام ہونے پر confirm کریں۔"
+  },
+  "tasks": {
+    "status_draft": "ڈرافٹ",
+    "status_open": "کھلا",
+    "status_assigned": "تفویض کیا گیا",
+    "status_in_progress": "جاری ہے",
+    "status_tasker_done": "تصدیق باقی",
+    "status_completed": "مکمل ہو گیا",
+    "status_paid_out": "ادائیگی کی گئی",
+    "status_cancelled": "منسوخ کیا گیا",
+    "status_disputed": "تنازع میں",
+    "status_expired": "مدت ختم"
+  },
+  "common": {
+    "loading": "لوڈ ہو رہا ہے…",
+    "error": "کچھ غلط ہوا۔ براہ کرم دوبارہ کوشش کریں۔",
+    "save": "محفوظ کریں",
+    "cancel": "منسوخ کریں",
+    "back": "واپس",
+    "next": "آگے",
+    "confirm": "تصدیق کریں",
+    "delete": "حذف کریں",
+    "edit": "ترمیم کریں",
+    "view": "دیکھیں",
+    "close": "بند کریں",
+    "search": "تلاش کریں",
+    "filter": "فلٹر",
+    "sort": "ترتیب دیں",
+    "from": "سے",
+    "to": "تک",
+    "of": "کا"
+  }
+}
