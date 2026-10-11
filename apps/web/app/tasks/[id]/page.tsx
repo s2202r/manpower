@@ -1,0 +1,120 @@
+import { createClient } from '@/lib/supabase/server'
+import { notFound } from 'next/navigation'
+import { formatDistanceToNow } from '@/lib/date'
+import OfferButton from '@/components/tasks/OfferButton'
+import OffersList from '@/components/tasks/OffersList'
+
+export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('*, categories(names, icon, slug), profiles!poster_id(name, photo_url, rating_avg, rating_count)')
+    .eq('id', id)
+    .single()
+
+  if (!task) notFound()
+
+  const isPoster = user?.id === task.poster_id
+  const isAssignedTasker = user?.id === task.assigned_tasker_id
+
+  const { data: myOffer } = user && !isPoster
+    ? await supabase.from('offers').select('*').eq('task_id', id).eq('tasker_id', user.id).single()
+    : { data: null }
+
+  const { data: offers } = isPoster
+    ? await supabase
+        .from('offers')
+        .select('*, profiles!tasker_id(name, photo_url, rating_avg, rating_count)')
+        .eq('task_id', id)
+        .order('created_at')
+    : { data: null }
+
+  const category = task.categories as { names: Record<string, string>; icon: string } | null
+  const poster = task.profiles as { name: string; photo_url: string | null; rating_avg: number | null; rating_count: number } | null
+
+  return (
+    <main className="min-h-screen bg-gray-50 py-8">
+      <div className="mx-auto max-w-2xl px-4 space-y-6">
+        {/* Task card */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-start justify-between">
+            <div>
+              <span className="inline-block rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 mb-2">
+                {category?.icon} {category?.names?.['en']}
+              </span>
+              <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
+            </div>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+              task.status === 'open' ? 'bg-green-100 text-green-700'
+              : task.status === 'assigned' ? 'bg-blue-100 text-blue-700'
+              : 'bg-gray-100 text-gray-700'
+            }`}>{task.status}</span>
+          </div>
+
+          <p className="text-gray-700 whitespace-pre-wrap mb-4">{task.description}</p>
+
+          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 border-t pt-4">
+            <div>
+              <span className="font-semibold">Budget:</span>{' '}
+              ₹{Math.round(task.budget_paise / 100).toLocaleString('en-IN')}
+            </div>
+            <div>
+              <span className="font-semibold">Type:</span>{' '}
+              {task.task_type === 'in_person' ? '📍 In person' : task.task_type === 'pickup_drop' ? '🛵 Pickup–drop' : '💻 Remote'}
+            </div>
+            {task.display_area && (
+              <div><span className="font-semibold">Area:</span> {task.display_area}</div>
+            )}
+            {task.date_from && (
+              <div><span className="font-semibold">Date:</span> {task.date_from}</div>
+            )}
+          </div>
+
+          {task.photos?.length > 0 && (
+            <div className="mt-4 flex gap-2 overflow-x-auto">
+              {(task.photos as string[]).map((url, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={i} src={url} alt={`Photo ${i + 1}`} className="h-24 w-24 rounded-lg object-cover flex-shrink-0" />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Poster info */}
+        {poster && (
+          <div className="rounded-2xl bg-white p-4 shadow-sm flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-lg">
+              {poster.name?.[0]?.toUpperCase()}
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">{poster.name}</p>
+              {poster.rating_count > 0 && (
+                <p className="text-sm text-gray-500">⭐ {poster.rating_avg?.toFixed(1)} ({poster.rating_count} reviews)</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Offer button for taskers */}
+        {user && !isPoster && task.status === 'open' && (
+          <OfferButton taskId={task.id} existingOffer={myOffer} />
+        )}
+
+        {/* Offers list for poster */}
+        {isPoster && offers && offers.length > 0 && (
+          <OffersList taskId={task.id} offers={offers} taskStatus={task.status} />
+        )}
+
+        {isPoster && task.status === 'open' && (!offers || offers.length === 0) && (
+          <div className="rounded-2xl bg-white p-6 shadow-sm text-center text-gray-500">
+            <p className="text-lg">No offers yet</p>
+            <p className="text-sm mt-1">Taskers nearby will see your task and send offers.</p>
+          </div>
+        )}
+      </div>
+    </main>
+  )
+}
