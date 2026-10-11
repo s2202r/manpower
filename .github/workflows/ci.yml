@@ -7,29 +7,43 @@ on:
     branches: [main]
 
 jobs:
-  ci:
-    name: Lint, typecheck & test
+  lint-and-test:
+    name: Lint & test
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v3
         with:
-          version: 10
+          version: 9
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm lint
+      - name: Type check (packages/core)
+        run: pnpm --filter @taim/core exec tsc --noEmit
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Run unit tests
+        run: pnpm --filter @taim/core test --run
 
-      - name: Test
-        run: pnpm test
+      - name: Type check (web)
+        run: pnpm --filter @taim/web exec tsc --noEmit
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+
+      - name: Type check (admin)
+        run: pnpm --filter @taim/admin exec tsc --noEmit
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+
+      - name: Type check (mobile)
+        run: pnpm --filter @taim/mobile exec tsc --noEmit

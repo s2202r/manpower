@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { APP_NAME } from '@taim/config'
+import { registerForPushNotifications, sendTokenToServer } from '@/lib/push'
 
 interface Profile { name: string; roles: string[]; verification_tier: string }
 interface Task { id: string; title: string; status: string; offer_count: number; budget_paise: number }
@@ -34,6 +35,19 @@ export default function HomeTab() {
     setTasks(t ?? [])
     setOffers((o ?? []).map(offer => ({ ...offer, taskTitle: (offer.tasks as unknown as { title: string } | null)?.title ?? '' })))
     setLoading(false)
+
+    // Register push token in background (non-blocking)
+    registerForPushNotifications().then(token => {
+      if (token) {
+        supabase.auth.getSession().then(({ data }) => {
+          const accessToken = data.session?.access_token
+          const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? ''
+          if (accessToken && apiUrl) {
+            void sendTokenToServer(token, apiUrl, accessToken)
+          }
+        })
+      }
+    })
   }
 
   if (loading) return <View style={s.center}><ActivityIndicator color="#d97706" size="large" /></View>
