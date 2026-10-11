@@ -1,21 +1,42 @@
 {
   "cli": {
-    "version": ">= 12.0.0"
+    "version": ">= 7.0.0"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://taim-web-dev.vercel.app"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://taim-web-staging.vercel.app"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://taim.space"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./google-services-key.json",
+        "track": "production"
+      },
+      "ios": {
+        "appleId": "your@apple.id",
+        "ascAppId": "your-asc-app-id",
+        "appleTeamId": "YOUR_TEAM_ID"
+      }
+    }
   }
 }

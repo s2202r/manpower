@@ -1,6 +1,18 @@
 {
   "framework": "nextjs",
-  "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "cd ../.. && pnpm build --filter=@taim/web",
-  "outputDirectory": ".next"
+  "buildCommand": "cd ../.. && pnpm --filter @taim/web build",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "outputDirectory": ".next",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "PAYMENT_PROVIDER": "@payment_provider",
+    "RAZORPAY_KEY_ID": "@razorpay_key_id",
+    "RAZORPAY_KEY_SECRET": "@razorpay_key_secret",
+    "RAZORPAY_WEBHOOK_SECRET": "@razorpay_webhook_secret",
+    "CASHFREE_APP_ID": "@cashfree_app_id",
+    "CASHFREE_SECRET_KEY": "@cashfree_secret_key",
+    "CASHFREE_WEBHOOK_SECRET": "@cashfree_webhook_secret"
+  }
 }
