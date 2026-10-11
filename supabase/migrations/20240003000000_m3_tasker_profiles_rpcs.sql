@@ -1,35 +1,24 @@
--- M3: tasker profiles, payout account storage, and aggregate rating RPCs
+-- M3: RPCs for tasker task counting, rating aggregation, and first_task_at tracking.
+-- tasker_profiles table already created in 20240001000002_tasker_profiles.sql.
 
--- Tasker profile extension (completed task count, payout account ref, first task date)
-create table public.tasker_profiles (
-  profile_id          uuid primary key references public.profiles(id),
-  completed_tasks     integer not null default 0,
-  first_task_at       timestamptz,          -- set on first booking, used for free-period fee calc
-  payout_account_ref  text,                 -- provider-stored payout account reference (not raw bank details)
-  created_at          timestamptz not null default now(),
-  updated_at          timestamptz not null default now()
-);
-
-alter table public.tasker_profiles enable row level security;
-
-create policy "Tasker can view their own profile"
-  on public.tasker_profiles for select using (auth.uid() = profile_id);
-
-create policy "Tasker can insert their own profile"
-  on public.tasker_profiles for insert with check (auth.uid() = profile_id);
-
-create policy "Tasker can update their own profile"
-  on public.tasker_profiles for update using (auth.uid() = profile_id);
-
--- Auto-create tasker_profile row when a booking is completed for a new tasker
+-- Increment completed_tasks and set first_task_at on first completion
 create or replace function increment_completed_tasks(p_profile_id uuid)
 returns void language plpgsql security definer as $$
 begin
-  insert into public.tasker_profiles (profile_id, completed_tasks, first_task_at)
-  values (p_profile_id, 1, now())
-  on conflict (profile_id) do update
-    set completed_tasks = public.tasker_profiles.completed_tasks + 1,
-        updated_at = now();
+  update public.tasker_profiles
+     set completed_tasks = completed_tasks + 1,
+         first_task_at   = coalesce(first_task_at, now()),
+         updated_at      = now()
+   where profile_id = p_profile_id;
+
+  -- Insert row if tasker_profiles row doesn't exist yet
+  if not found then
+    insert into public.tasker_profiles (profile_id, completed_tasks, first_task_at)
+    values (p_profile_id, 1, now())
+    on conflict (profile_id) do update
+      set completed_tasks = public.tasker_profiles.completed_tasks + 1,
+          updated_at = now();
+  end if;
 end;
 $$;
 
@@ -52,19 +41,18 @@ begin
 end;
 $$;
 
--- Set first_task_at on tasker_profile when they get their first accepted offer
+-- Set first_task_at when task transitions to in_progress (escrow captured)
 create or replace function set_first_task_at()
 returns trigger language plpgsql as $$
 begin
   if new.status = 'in_progress' then
-    insert into public.tasker_profiles (profile_id, first_task_at)
-    select b.tasker_id, now()
+    update public.tasker_profiles tp
+       set first_task_at = coalesce(tp.first_task_at, now()),
+           updated_at    = now()
       from public.bookings b
      where b.task_id = new.id
        and b.escrow_state = 'held'
-    on conflict (profile_id) do update
-      set first_task_at = coalesce(public.tasker_profiles.first_task_at, excluded.first_task_at),
-          updated_at = now();
+       and tp.profile_id = b.tasker_id;
   end if;
   return new;
 end;
@@ -76,7 +64,7 @@ create trigger task_in_progress_trigger
   when (new.status = 'in_progress' and old.status <> 'in_progress')
   execute procedure set_first_task_at();
 
--- Update bookings.updated_at on any change
+-- Auto-update bookings.updated_at on any change
 create trigger bookings_updated_at
   before update on public.bookings
   for each row execute procedure moddatetime(updated_at);
