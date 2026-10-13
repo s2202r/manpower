@@ -57,6 +57,9 @@ export default async function DashboardPage() {
               {tier === 'kyc' ? '✅ KYC verified' : tier === 'email' ? '📧 Email verified' : '⚠️ Not verified'}
               {profile?.rating_count ? ` · ⭐ ${(profile.rating_avg ?? 0).toFixed(1)} (${profile.rating_count} reviews)` : ''}
             </p>
+            <Link href="/profile/edit" className="text-sm text-amber-600 hover:text-amber-700 font-medium">
+              Edit profile →
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <NotificationBell />

@@ -1,67 +1,83 @@
-import { requireAdmin } from '@/lib/require-admin'
 import { createAdminClient } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/require-admin'
 import Link from 'next/link'
 
-export const metadata = { title: 'KYC — Taim Admin' }
+export const metadata = { title: 'KYC Queue' }
 
-export default async function KycPage() {
+export default async function KycQueuePage() {
   await requireAdmin()
-  const db = createAdminClient()
+  const supabase = createAdminClient()
 
-  const { data: requests } = await db
-    .from('kyc_requests')
-    .select('id, user_id, document_type, status, submitted_at, reviewed_at, profiles(name, email)')
-    .order('submitted_at', { ascending: true })
-    .limit(100)
+  // Users with email tier (need KYC review) - most recent first
+  const { data: pending } = await supabase
+    .from('profiles')
+    .select('id, name, email, verification_tier, created_at, roles, display_area')
+    .in('verification_tier', ['email', 'none'])
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  // Recently KYC-approved
+  const { data: approved } = await supabase
+    .from('profiles')
+    .select('id, name, email, verification_tier, created_at')
+    .eq('verification_tier', 'kyc')
+    .order('created_at', { ascending: false })
+    .limit(10)
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">KYC Requests</h1>
-        <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">← Dashboard</Link>
-      </div>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-8">KYC Queue</h1>
 
-      <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="border-b border-gray-100 text-xs text-gray-500 uppercase">
-            <tr>
-              {['User', 'Document', 'Status', 'Submitted', 'Action'].map(h => (
-                <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {(requests ?? []).map(r => {
-              const profile = r.profiles as unknown as { name: string; email: string } | null
-              return (
-                <tr key={r.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{profile?.name ?? '—'}</p>
-                    <p className="text-xs text-gray-500">{profile?.email}</p>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 capitalize">{(r.document_type as string).replace('_', ' ')}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      r.status === 'approved' ? 'bg-green-100 text-green-700'
-                      : r.status === 'rejected' ? 'bg-red-100 text-red-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                    }`}>{r.status as string}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {new Date(r.submitted_at as string).toLocaleDateString('en-IN')}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link href={`/kyc/${r.id}`}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
-                      Review
-                    </Link>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </main>
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold mb-4 text-gray-700">
+          Pending verification <span className="text-sm font-normal text-gray-400">({pending?.length ?? 0})</span>
+        </h2>
+        {!pending || pending.length === 0 ? (
+          <p className="text-gray-400">No pending users.</p>
+        ) : (
+          <div className="space-y-2">
+            {pending.map(u => (
+              <div key={u.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4">
+                <div>
+                  <p className="font-semibold text-gray-900">{u.name ?? '(no name)'}</p>
+                  <p className="text-sm text-gray-500">{u.email} · {(u.roles as string[])?.join(', ')} · {u.display_area ?? '—'}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{new Date(u.created_at).toLocaleDateString('en-IN')}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${u.verification_tier === 'email' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {u.verification_tier === 'email' ? 'Email ✓' : 'None'}
+                  </span>
+                  <Link
+                    href={`/kyc/${u.id}`}
+                    className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600 transition-colors"
+                  >
+                    Review →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-4 text-gray-700">Recently approved</h2>
+        {!approved || approved.length === 0 ? (
+          <p className="text-gray-400">None yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {approved.map(u => (
+              <div key={u.id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-5 py-3">
+                <div>
+                  <p className="font-medium text-gray-700">{u.name}</p>
+                  <p className="text-sm text-gray-400">{u.email}</p>
+                </div>
+                <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-700">KYC ✓</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   )
 }

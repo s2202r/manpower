@@ -1,89 +1,75 @@
-import { requireAdmin } from '@/lib/require-admin'
 import { createAdminClient } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/require-admin'
 import Link from 'next/link'
 
-export const metadata = { title: 'Users — Taim Admin' }
+export const metadata = { title: 'Users' }
 
-export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
   await requireAdmin()
-  const { q, page } = await searchParams
-  const db = createAdminClient()
-  const pageNum = Math.max(1, Number(page ?? 1))
-  const pageSize = 50
-  const offset = (pageNum - 1) * pageSize
+  const { q } = await searchParams
+  const supabase = createAdminClient()
 
-  let query = db.from('profiles')
-    .select('id, email, name, roles, verification_tier, rating_avg, rating_count, created_at', { count: 'exact' })
+  let query = supabase
+    .from('profiles')
+    .select('id, name, email, roles, verification_tier, rating_avg, rating_count, created_at, display_area')
     .order('created_at', { ascending: false })
-    .range(offset, offset + pageSize - 1)
+    .limit(50)
 
-  if (q) query = query.ilike('name', `%${q}%`)
+  if (q) {
+    query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%`)
+  }
 
-  const { data: users, count } = await query
-  const totalPages = Math.ceil((count ?? 0) / pageSize)
+  const { data: users } = await query
+
+  const TIER_COLOR: Record<string, string> = {
+    kyc: 'bg-blue-100 text-blue-700',
+    email: 'bg-yellow-100 text-yellow-700',
+    none: 'bg-gray-100 text-gray-500',
+  }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-        <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">← Dashboard</Link>
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Users</h1>
+        <form>
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Search by name or email…"
+            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm w-64 focus:border-amber-400 focus:outline-none"
+          />
+        </form>
       </div>
 
-      <form className="mb-6">
-        <input name="q" defaultValue={q} placeholder="Search by name…"
-          className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:border-blue-500" />
-      </form>
-
-      <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="border-b border-gray-100 text-xs text-gray-500 uppercase">
-            <tr>
-              {['Name', 'Email', 'Roles', 'Tier', 'Rating', 'Joined'].map(h => (
-                <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {(users ?? []).map(u => (
-              <tr key={u.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium">
-                  <Link href={`/users/${u.id}`} className="text-blue-600 hover:underline">{u.name || '—'}</Link>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{u.email}</td>
-                <td className="px-4 py-3">
-                  {(u.roles as string[]).map(r => (
-                    <span key={r} className="mr-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">{r}</span>
-                  ))}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    u.verification_tier === 'kyc' ? 'bg-green-100 text-green-700'
-                    : u.verification_tier === 'email' ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-600'
-                  }`}>{u.verification_tier ?? 'none'}</span>
-                </td>
-                <td className="px-4 py-3 text-gray-600">
-                  {u.rating_avg ? `${(u.rating_avg as number).toFixed(1)} (${u.rating_count})` : '—'}
-                </td>
-                <td className="px-4 py-3 text-gray-500">
-                  {new Date(u.created_at as string).toLocaleDateString('en-IN')}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-2">
+        {!users || users.length === 0 ? (
+          <p className="text-gray-400">No users found.</p>
+        ) : users.map(u => (
+          <div key={u.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-3.5">
+            <div>
+              <p className="font-semibold text-gray-900">{u.name ?? '(no name)'}</p>
+              <p className="text-sm text-gray-500">{u.email} · {(u.roles as string[])?.join(', ')} · {u.display_area ?? '—'}</p>
+              {u.rating_count > 0 && (
+                <p className="text-xs text-amber-600 mt-0.5">⭐ {(u.rating_avg as number).toFixed(1)} ({u.rating_count})</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${TIER_COLOR[u.verification_tier as string] ?? TIER_COLOR.none}`}>
+                {u.verification_tier === 'kyc' ? 'KYC ✓' : u.verification_tier === 'email' ? 'Email ✓' : 'None'}
+              </span>
+              {u.verification_tier !== 'kyc' && (
+                <Link href={`/kyc/${u.id}`} className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 transition-colors">
+                  Review
+                </Link>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
-
-      {totalPages > 1 && (
-        <div className="mt-4 flex gap-2 justify-center">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-            <Link key={p} href={`?page=${p}${q ? `&q=${q}` : ''}`}
-              className={`rounded-lg px-3 py-1 text-sm ${p === pageNum ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
-              {p}
-            </Link>
-          ))}
-        </div>
-      )}
-    </main>
+    </div>
   )
 }

@@ -29,7 +29,7 @@ export default function SignUpForm() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/onboarding/language')
+      router.push('/onboarding/role')
     }
   }
 

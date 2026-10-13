@@ -1,69 +1,38 @@
-'use client'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import RolePickerClient from './RolePickerClient'
 
-import { APP_NAME } from '@taim/config'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+export const metadata = { title: 'Choose your role — Taim' }
 
-type Role = 'poster' | 'tasker' | 'both'
+export default async function OnboardingRolePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/sign-in')
 
-const ROLE_OPTIONS: { value: Role; label: string; desc: string; icon: string }[] = [
-  { value: 'poster', label: 'I need help', desc: 'Post tasks and hire Taskers', icon: '📋' },
-  { value: 'tasker', label: 'I want to earn', desc: 'Take tasks and earn money', icon: '💰' },
-  { value: 'both', label: 'Both', desc: 'Post tasks and earn as a Tasker', icon: '⚡' },
-]
+  // Skip if already has a role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('roles')
+    .eq('id', user.id)
+    .single()
 
-export default function RolePage() {
-  const router = useRouter()
-  const [selected, setSelected] = useState<Role>('poster')
-  const [loading, setLoading] = useState(false)
-
-  async function handleContinue() {
-    setLoading(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const roles = selected === 'both' ? ['poster', 'tasker'] : [selected]
-      await supabase.from('profiles').update({ roles }).eq('id', user.id)
-    }
-    if (selected === 'tasker' || selected === 'both') {
-      router.push('/onboarding/tasker/categories')
-    } else {
-      router.push('/dashboard')
-    }
-  }
+  const roles = (profile?.roles as string[]) ?? []
+  if (roles.length > 0) redirect('/onboarding/locale')
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-sm">
-        <h1 className="mb-2 text-center text-3xl font-black text-brand-600">{APP_NAME}</h1>
-        <p className="mb-8 text-center text-gray-600">How will you use Taim?</p>
-        <div className="space-y-3">
-          {ROLE_OPTIONS.map(({ value, label, desc, icon }) => (
-            <button
-              key={value}
-              onClick={() => setSelected(value)}
-              className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-colors ${
-                selected === value
-                  ? 'border-brand-600 bg-brand-50'
-                  : 'border-gray-200 hover:border-brand-300'
-              }`}
-            >
-              <span className="text-3xl">{icon}</span>
-              <div>
-                <p className="font-bold text-gray-900">{label}</p>
-                <p className="text-sm text-gray-600">{desc}</p>
-              </div>
-            </button>
-          ))}
+    <main className="min-h-screen bg-gradient-to-br from-amber-50 to-white flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 mb-4">
+            <svg width="28" height="32" viewBox="0 0 28 32" fill="none" aria-hidden="true">
+              <path d="M16 2L4 18h9l-1 12 15-18h-9l2-10z" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1" strokeLinejoin="round" />
+            </svg>
+            <span className="text-2xl font-black tracking-tight text-gray-900">taim<span className="text-amber-500">.</span></span>
+          </div>
+          <h1 className="text-3xl font-black text-gray-900">How will you use Taim?</h1>
+          <p className="mt-2 text-gray-500">You can always change this later.</p>
         </div>
-        <button
-          onClick={handleContinue}
-          disabled={loading}
-          className="mt-8 w-full rounded-xl bg-brand-600 py-4 font-bold text-white hover:bg-brand-700 disabled:opacity-50"
-        >
-          {loading ? 'Saving…' : 'Continue'}
-        </button>
+        <RolePickerClient />
       </div>
     </main>
   )
