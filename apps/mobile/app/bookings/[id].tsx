@@ -19,8 +19,13 @@ export default function BookingScreen() {
   const [loading, setLoading] = useState(true)
   const [otp, setOtp] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
+  const [rating, setRating] = useState(0)
+  const [comment, setComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [reviewed, setReviewed] = useState(false)
 
   useEffect(() => { void load() }, [bookingId])
+  useEffect(() => { if (booking?.escrow_state === 'released' && user?.id) void checkReview() }, [booking?.escrow_state, user?.id])
 
   async function load() {
     const { data } = await supabase
@@ -33,6 +38,36 @@ export default function BookingScreen() {
       setBooking({ ...data, taskTitle: t?.title ?? '', task_status: t?.status ?? '' })
     }
     setLoading(false)
+  }
+
+  async function checkReview() {
+    if (!user?.id || !bookingId) return
+    const { data } = await supabase
+      .from('reviews')
+      .select('id')
+      .eq('booking_id', bookingId)
+      .eq('reviewer_id', user.id)
+      .maybeSingle()
+    if (data) setReviewed(true)
+  }
+
+  async function submitReview() {
+    if (!booking || !user?.id || rating === 0) return
+    const revieweeId = booking.poster_id === user.id ? booking.tasker_id : booking.poster_id
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? ''
+    setSubmitting(true)
+    try {
+      const res = await fetch(`${baseUrl}/api/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, revieweeId, rating, comment: comment.trim() || undefined }),
+      })
+      const data = await res.json() as Record<string, unknown>
+      if (!res.ok) Alert.alert('Error', (data.error as string) ?? 'Something went wrong')
+      else setReviewed(true)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function callApi(path: string, body: Record<string, unknown> = {}) {
@@ -112,6 +147,44 @@ export default function BookingScreen() {
         </View>
       )}
 
+      {booking.escrow_state === 'released' && (
+        <View style={s.card}>
+          <Text style={s.sectionTitle}>Leave a review</Text>
+          {reviewed ? (
+            <View style={s.reviewedRow}>
+              <Text style={s.reviewedText}>Review submitted ✅</Text>
+            </View>
+          ) : (
+            <>
+              <View style={s.starsRow}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity key={star} onPress={() => setRating(star)} style={s.starBtn}>
+                    <Text style={[s.star, star <= rating && s.starFilled]}>★</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TextInput
+                style={s.commentInput}
+                value={comment}
+                onChangeText={setComment}
+                placeholder="Add a comment (optional)"
+                placeholderTextColor="#9ca3af"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+              <TouchableOpacity
+                style={[s.btn, rating === 0 && s.btnDisabled]}
+                disabled={rating === 0 || submitting}
+                onPress={() => void submitReview()}
+              >
+                <Text style={s.btnText}>{submitting ? 'Submitting…' : 'Submit review'}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      )}
+
       {booking.escrow_state === 'refunded' && (
         <View style={[s.card, { alignItems: 'center', paddingVertical: 24 }]}>
           <Text style={{ fontSize: 36 }}>↩️</Text>
@@ -142,4 +215,12 @@ const s = StyleSheet.create({
   btnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   disputeBtn: { marginTop: 10, borderWidth: 2, borderColor: '#fca5a5', borderRadius: 12, padding: 12, alignItems: 'center' },
   disputeText: { color: '#dc2626', fontSize: 14, fontWeight: '600' },
+  starsRow: { flexDirection: 'row', marginBottom: 12 },
+  starBtn: { padding: 4 },
+  star: { fontSize: 36, color: '#d1d5db' },
+  starFilled: { color: '#f59e0b' },
+  commentInput: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, padding: 12, fontSize: 14, color: '#111', minHeight: 72, marginBottom: 12 },
+  btnDisabled: { backgroundColor: '#e5e7eb' },
+  reviewedRow: { alignItems: 'center', paddingVertical: 12 },
+  reviewedText: { fontSize: 16, fontWeight: '700', color: '#16a34a' },
 })

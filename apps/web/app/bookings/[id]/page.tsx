@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import BookingActions from '@/components/bookings/BookingActions'
 import ReviewForm from '@/components/bookings/ReviewForm'
+import DisputeForm from '@/components/bookings/DisputeForm'
 import Link from 'next/link'
 
 export const metadata = { title: 'Booking' }
@@ -50,6 +51,13 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
 
   const revieweeId = isPoster ? booking.tasker_id : booking.poster_id
   const revieweeName = isPoster ? (taskerProfile?.name ?? 'Tasker') : (posterProfile?.name ?? 'Poster')
+
+  // Fetch existing dispute
+  const { data: existingDispute } = await supabase
+    .from('disputes')
+    .select('id, status')
+    .eq('booking_id', id)
+    .maybeSingle()
 
   // Check if this user has already reviewed
   const { data: myReview } = await supabase
@@ -137,6 +145,18 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             <PartyCard label="Tasker" name={taskerProfile?.name ?? '—'} isYou={isTasker} />
           </div>
         </div>
+
+        {/* Dispute section */}
+        {isPoster && booking.escrow_state === 'held' && (task?.status === 'in_progress' || task?.status === 'tasker_done') && (
+          existingDispute ? (
+            <div className="rounded-2xl bg-orange-50 border border-orange-200 p-5 text-center">
+              <p className="font-bold text-orange-800">⚠️ Dispute in review</p>
+              <p className="text-sm text-orange-600 mt-1">Our team is reviewing this dispute. Payment is on hold.</p>
+            </div>
+          ) : (
+            <DisputeForm bookingId={booking.id} />
+          )
+        )}
 
         {/* Action buttons based on role and state */}
         <BookingActions

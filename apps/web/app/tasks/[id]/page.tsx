@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { formatDistanceToNow } from '@/lib/date'
 import OfferButton from '@/components/tasks/OfferButton'
 import OffersList from '@/components/tasks/OffersList'
+import ChatPanel from '@/components/tasks/ChatPanel'
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -47,6 +48,19 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
   const category = task.categories as { names: Record<string, string>; icon: string } | null
   const poster = task.profiles as { name: string; photo_url: string | null; rating_avg: number | null; rating_count: number } | null
+
+  // Fetch assigned tasker name for chat header
+  let assignedTaskerName: string | null = null
+  if (task.assigned_tasker_id) {
+    const { data: taskerProfile } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', task.assigned_tasker_id)
+      .single()
+    assignedTaskerName = taskerProfile?.name ?? null
+  }
+
+  const canChat = !!task.assigned_tasker_id && !!user && (isPoster || isAssignedTasker)
 
   return (
     <main className="min-h-screen bg-gray-50 py-8">
@@ -122,6 +136,24 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             <h2 className="text-xl font-bold text-gray-900 mb-3">Offers ({offers.length})</h2>
             <OffersList offers={offers} taskStatus={task.status} />
           </div>
+        )}
+
+        {/* In-task chat (shown once a tasker is assigned) */}
+        {canChat && (
+          <section>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">Messages</h2>
+            <ChatPanel
+              taskId={task.id}
+              posterId={task.poster_id}
+              taskerId={task.assigned_tasker_id!}
+              currentUserId={user!.id}
+              otherName={
+                isPoster
+                  ? (assignedTaskerName ?? 'Tasker')
+                  : (poster?.name ?? 'Poster')
+              }
+            />
+          </section>
         )}
       </div>
     </main>
