@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import LanguageSwitcher from '@/components/LanguageSwitcher'
-import { APP_NAME, APP_TAGLINE } from '@taim/config'
+import { APP_TAGLINE } from '@taim/config'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -20,31 +19,6 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
-          <TaimLogo />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher />
-            <Link href="/tasks" className="text-sm text-gray-500 hover:text-gray-800 transition-colors hidden sm:inline">
-              Browse tasks
-            </Link>
-            <Link
-              href="/auth/sign-in"
-              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-amber-400 hover:text-amber-600 transition-colors"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/auth/sign-up"
-              className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-amber-600 transition-colors"
-            >
-              Join free
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero */}
       <section className="relative isolate overflow-hidden bg-white px-5 pt-20 pb-24 text-center">
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
