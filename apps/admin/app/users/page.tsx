@@ -15,7 +15,7 @@ export default async function UsersPage({
 
   let query = supabase
     .from('profiles')
-    .select('id, name, email, roles, verification_tier, rating_avg, rating_count, created_at, display_area')
+    .select('id, name, email, roles, verification_tier, rating_avg, rating_count, created_at, display_area, banned')
     .order('created_at', { ascending: false })
     .limit(50)
 
@@ -58,6 +58,9 @@ export default async function UsersPage({
               )}
             </div>
             <div className="flex items-center gap-2">
+              {u.banned && (
+                <span className="rounded-full bg-red-100 text-red-700 px-2.5 py-1 text-xs font-bold">Banned</span>
+              )}
               <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${TIER_COLOR[u.verification_tier as string] ?? TIER_COLOR.none}`}>
                 {u.verification_tier === 'kyc' ? 'KYC ✓' : u.verification_tier === 'email' ? 'Email ✓' : 'None'}
               </span>
@@ -66,6 +69,9 @@ export default async function UsersPage({
                   Review
                 </Link>
               )}
+              <Link href={`/users/${u.id}`} className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 transition-colors">
+                View →
+              </Link>
             </div>
           </div>
         ))}
