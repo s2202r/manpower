@@ -14,6 +14,9 @@ alter table public.tasks
 
 create index if not exists tasks_search_gin on public.tasks using gin(search_vector);
 
+-- Truncate first so re-runs are idempotent (safe — categories are seed data)
+truncate public.categories restart identity cascade;
+
 insert into public.categories (id, names, icon, slug) values
   (gen_random_uuid(), '{"en":"Home Repairs","hi":"घर की मरम्मत"}', '🔧', 'home-repairs'),
   (gen_random_uuid(), '{"en":"Cleaning","hi":"सफाई"}', '🧹', 'cleaning'),
