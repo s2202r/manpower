@@ -10,6 +10,7 @@ const NAV = [
   { href: '/tasks', label: 'Tasks' },
   { href: '/disputes', label: 'Disputes' },
   { href: '/payouts', label: 'Payouts' },
+  { href: '/reports', label: 'Reports' },
   { href: '/kyc', label: 'KYC' },
   { href: '/webhooks', label: 'Webhooks' },
   { href: '/categories', label: 'Categories' },
