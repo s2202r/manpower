@@ -22,7 +22,8 @@ insert into public.categories (slug, names, icon, allowed_types, is_live, sort_o
 ('photography', '{"en":"Photography & video","hi":"फ़ोटोग्राफी और वीडियो"}', '📷', '{in_person,remote}', false, 230),
 ('tutoring', '{"en":"Tutoring & skills","hi":"ट्यूटरिंग"}', '📚', '{in_person,remote}', false, 240),
 ('business-onsite', '{"en":"Business on-site help","hi":"बिज़नेस साइट पर मदद"}', '🏢', '{in_person}', false, 250),
-('licensed-repairs', '{"en":"Licensed repairs","hi":"लाइसेंसी मरम्मत"}', '⚡', '{in_person}', false, 260);
+('licensed-repairs', '{"en":"Licensed repairs","hi":"लाइसेंसी मरम्मत"}', '⚡', '{in_person}', false, 260)
+on conflict (slug) do nothing;
 
 -- Demo users (passwords handled by Supabase Auth in local dev)
 -- These UUIDs are fixed for seed reproducibility
