@@ -25,7 +25,9 @@ set referral_code = upper(substring(replace(gen_random_uuid()::text, '-', ''), 1
 where referral_code is null;
 
 -- Referral events log
-create table if not exists public.referral_events (
+drop table if exists public.referral_events cascade;
+
+create table public.referral_events (
   id uuid primary key default gen_random_uuid(),
   referrer_id uuid not null references public.profiles(id),
   referred_id uuid not null references public.profiles(id) unique,

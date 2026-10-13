@@ -1,5 +1,7 @@
 -- Disputes
-create table if not exists public.disputes (
+drop table if exists public.disputes cascade;
+
+create table public.disputes (
   id uuid primary key default gen_random_uuid(),
   booking_id uuid not null references public.bookings(id) on delete cascade,
   raised_by uuid not null references public.profiles(id),

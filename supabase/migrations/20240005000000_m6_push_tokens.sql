@@ -1,5 +1,7 @@
 -- Push notification device tokens
-create table if not exists public.push_tokens (
+drop table if exists public.push_tokens cascade;
+
+create table public.push_tokens (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references public.profiles(id) on delete cascade,
   token       text not null,

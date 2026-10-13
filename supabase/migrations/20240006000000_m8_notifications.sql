@@ -1,4 +1,6 @@
-create table if not exists public.notifications (
+drop table if exists public.notifications cascade;
+
+create table public.notifications (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references public.profiles(id) on delete cascade,
   kind        text not null,  -- 'new_offer' | 'offer_accepted' | 'task_assigned' | 'payment_held' | 'task_done' | 'payment_released' | 'new_message' | 'review_received'

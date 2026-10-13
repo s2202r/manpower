@@ -1,5 +1,7 @@
 -- Payout tracking
-create table if not exists public.payouts (
+drop table if exists public.payouts cascade;
+
+create table public.payouts (
   id uuid primary key default gen_random_uuid(),
   booking_id uuid not null references public.bookings(id) on delete cascade unique,
   tasker_id uuid not null references public.profiles(id),
