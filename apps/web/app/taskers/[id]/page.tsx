@@ -5,8 +5,23 @@ import Link from 'next/link'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data } = await supabase.from('profiles').select('name').eq('id', id).single()
-  return { title: data?.name ? `${data.name} — Taim` : 'Tasker Profile' }
+  const { data } = await supabase
+    .from('profiles')
+    .select('name, bio, rating_avg, rating_count, verification_tier')
+    .eq('id', id)
+    .single()
+  if (!data) return { title: 'Tasker Profile' }
+
+  const name = data.name as string ?? 'Tasker'
+  const rating = data.rating_count ? ` · ⭐ ${(data.rating_avg as number).toFixed(1)} (${data.rating_count} reviews)` : ''
+  const tier = data.verification_tier === 'kyc' ? ' · KYC Verified ✅' : ''
+  const desc = `Hire ${name} on Taim${rating}${tier}.${data.bio ? ' ' + (data.bio as string).slice(0, 100) : ''}`
+
+  return {
+    title: `${name} — Taim Tasker`,
+    description: desc,
+    openGraph: { title: `${name} — Taim`, description: desc, type: 'profile' },
+  }
 }
 
 export default async function TaskerProfilePage({ params }: { params: Promise<{ id: string }> }) {

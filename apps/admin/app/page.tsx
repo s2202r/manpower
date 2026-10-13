@@ -1,56 +1,101 @@
-import { requireAdmin } from '@/lib/require-admin'
 import { createAdminClient } from '@/lib/supabase'
-import Link from 'next/link'
+import { requireAdmin } from '@/lib/require-admin'
 
-export const metadata = { title: 'Dashboard — Taim Admin' }
+export const metadata = { title: 'Admin Dashboard' }
 
 export default async function AdminDashboard() {
   await requireAdmin()
-  const db = createAdminClient()
+  const supabase = createAdminClient()
 
   const [
     { count: totalUsers },
+    { count: kycUsers },
+    { count: totalTasks },
     { count: openTasks },
-    { count: heldBookings },
+    { count: completedTasks },
+    { data: gmvData },
+    { count: activeBookings },
     { count: openDisputes },
-    { count: pendingKyc },
+    { count: totalDisputes },
+    { data: recentTasks },
   ] = await Promise.all([
-    db.from('profiles').select('id', { count: 'exact', head: true }),
-    db.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'open'),
-    db.from('bookings').select('id', { count: 'exact', head: true }).eq('escrow_state', 'held'),
-    db.from('disputes').select('id', { count: 'exact', head: true }).eq('status', 'open'),
-    db.from('kyc_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('verification_tier', 'kyc'),
+    supabase.from('tasks').select('id', { count: 'exact', head: true }),
+    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
+    supabase.from('bookings').select('amount_paise').eq('escrow_state', 'released'),
+    supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('escrow_state', 'held'),
+    supabase.from('disputes').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+    supabase.from('disputes').select('id', { count: 'exact', head: true }),
+    supabase.from('tasks').select('id, title, status, budget_paise, created_at, profiles!poster_id(name)').order('created_at', { ascending: false }).limit(5),
   ])
 
-  const stats = [
-    { label: 'Total users', value: totalUsers ?? 0, href: '/users', color: 'bg-blue-500' },
-    { label: 'Open tasks', value: openTasks ?? 0, href: '/tasks', color: 'bg-green-500' },
-    { label: 'Funds in escrow', value: heldBookings ?? 0, href: '/bookings', color: 'bg-amber-500' },
-    { label: 'Open disputes', value: openDisputes ?? 0, href: '/disputes', color: 'bg-red-500' },
-    { label: 'Pending KYC', value: pendingKyc ?? 0, href: '/kyc', color: 'bg-purple-500' },
-  ]
+  const gmv = (gmvData ?? []).reduce((s, b) => s + ((b.amount_paise as number) ?? 0), 0)
+  const fmtRs = (p: number) => `₹${Math.round(p / 100).toLocaleString('en-IN')}`
+
+  const STATUS_COLOR: Record<string, string> = {
+    open: 'bg-green-100 text-green-700',
+    assigned: 'bg-blue-100 text-blue-700',
+    in_progress: 'bg-indigo-100 text-indigo-700',
+    tasker_done: 'bg-orange-100 text-orange-700',
+    completed: 'bg-gray-100 text-gray-600',
+  }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
-      <h1 className="mb-8 text-3xl font-bold text-gray-900">Taim Admin</h1>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {stats.map(s => (
-          <Link key={s.href} href={s.href}
-            className="rounded-2xl bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className={`mb-3 h-3 w-3 rounded-full ${s.color}`} />
-            <p className="text-3xl font-bold text-gray-900">{s.value.toLocaleString()}</p>
-            <p className="mt-1 text-sm text-gray-500">{s.label}</p>
-          </Link>
-        ))}
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-8">
+        <StatCard label="Total GMV" value={fmtRs(gmv)} sub="released" color="amber" />
+        <StatCard label="Active escrow" value={String(activeBookings ?? 0)} sub="bookings" color="blue" />
+        <StatCard label="Open disputes" value={String(openDisputes ?? 0)} sub={`of ${totalDisputes ?? 0} total`} color={openDisputes ? 'red' : 'green'} />
+        <StatCard label="Users" value={String(totalUsers ?? 0)} sub={`${kycUsers ?? 0} KYC verified`} color="gray" />
       </div>
-      <nav className="mt-10 flex flex-wrap gap-3">
-        {['/users', '/tasks', '/bookings', '/disputes', '/kyc', '/webhooks'].map(path => (
-          <Link key={path} href={path}
-            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            {path.replace('/', '').charAt(0).toUpperCase() + path.slice(2)}
-          </Link>
-        ))}
-      </nav>
-    </main>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-8">
+        <StatCard label="Total tasks" value={String(totalTasks ?? 0)} sub="all time" color="gray" />
+        <StatCard label="Open tasks" value={String(openTasks ?? 0)} sub="awaiting offers" color="green" />
+        <StatCard label="Completed" value={String(completedTasks ?? 0)} sub="tasks" color="blue" />
+        <StatCard label="KYC rate" value={`${totalUsers ? Math.round(((kycUsers ?? 0) / totalUsers) * 100) : 0}%`} sub="verified users" color="amber" />
+      </div>
+
+      {/* Recent tasks */}
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-900">Recent tasks</h2>
+        </div>
+        <ul className="divide-y divide-gray-50">
+          {(recentTasks ?? []).map(task => {
+            const poster = task.profiles as unknown as { name: string } | null
+            return (
+              <li key={task.id} className="flex items-center justify-between px-5 py-3.5">
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">{task.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">by {poster?.name ?? '—'} · {fmtRs(task.budget_paise as number)}</p>
+                </div>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${STATUS_COLOR[task.status as string] ?? 'bg-gray-100 text-gray-500'}`}>
+                  {(task.status as string).replace('_', ' ')}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+type Color = 'amber' | 'blue' | 'green' | 'red' | 'gray'
+function StatCard({ label, value, sub, color }: { label: string; value: string; sub: string; color: Color }) {
+  const bg: Record<Color, string> = { amber: 'bg-amber-50', blue: 'bg-blue-50', green: 'bg-green-50', red: 'bg-red-50', gray: 'bg-white' }
+  const vc: Record<Color, string> = { amber: 'text-amber-700', blue: 'text-blue-700', green: 'text-green-700', red: 'text-red-700', gray: 'text-gray-900' }
+  return (
+    <div className={`rounded-xl border border-gray-200 ${bg[color]} p-5`}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">{label}</p>
+      <p className={`text-2xl font-black ${vc[color]}`}>{value}</p>
+      <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+    </div>
   )
 }

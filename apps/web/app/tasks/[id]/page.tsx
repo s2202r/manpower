@@ -1,5 +1,31 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('title, description, budget_paise, type, display_area')
+    .eq('id', id)
+    .single()
+
+  if (!task) return { title: 'Task not found' }
+
+  const budgetRs = Math.round((task.budget_paise as number) / 100)
+  const desc = `₹${budgetRs.toLocaleString('en-IN')} · ${task.type} · ${task.display_area ?? 'India'}${task.description ? ' — ' + (task.description as string).slice(0, 120) : ''}`
+
+  return {
+    title: task.title as string,
+    description: desc,
+    openGraph: {
+      title: `${task.title} — Taim`,
+      description: desc,
+      type: 'website',
+    },
+  }
+}
 import { formatDistanceToNow } from '@/lib/date'
 import OfferButton from '@/components/tasks/OfferButton'
 import OffersList from '@/components/tasks/OffersList'

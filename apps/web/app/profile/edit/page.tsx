@@ -36,6 +36,11 @@ export default async function ProfileEditPage() {
           ratingCount={profile?.rating_count as number ?? 0}
           email={user.email ?? ''}
         />
+        <div className="text-center mt-4">
+          <Link href="/profile/privacy" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            Privacy & data settings →
+          </Link>
+        </div>
       </div>
     </main>
   )
