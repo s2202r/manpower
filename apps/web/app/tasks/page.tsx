@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import SearchBox from '@/components/tasks/SearchBox'
 
 export const metadata = { title: 'Browse tasks' }
 
@@ -50,6 +52,17 @@ export default async function TaskFeedPage({
             <Link href="/tasks/new" className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">
               + Post task
             </Link>
+          </div>
+          {/* Search */}
+          <div className="mb-3">
+            <Suspense fallback={
+              <div className="flex gap-2">
+                <input placeholder="Search tasks…" className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm" disabled />
+                <button className="rounded-xl bg-amber-500 text-white px-4 py-2.5 text-sm font-bold">Search</button>
+              </div>
+            }>
+              <SearchBox defaultValue={q ?? ''} />
+            </Suspense>
           </div>
           {/* Type filters */}
           <div className="flex gap-2 flex-wrap">
