@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { APP_NAME, APP_TAGLINE } from '@taim/config'
 import './globals.css'
+import CookieBanner from '@/components/CookieBanner'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://taim.in'),
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="hi">
       <body className="min-h-screen bg-white text-gray-900 antialiased">
         {children}
+        <CookieBanner />
       </body>
     </html>
   )
