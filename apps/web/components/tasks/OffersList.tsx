@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 interface Offer {
   id: string
+  taskerId: string
   amount_paise: number
   message: string | null
   status: string
@@ -55,7 +56,9 @@ export default function OffersList({ offers, taskStatus }: { offers: Offer[]; ta
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-gray-900">{offer.taskerName}</span>
+                <a href={`/taskers/${offer.taskerId}`} className="font-bold text-gray-900 hover:text-amber-600 transition-colors">
+                  {offer.taskerName}
+                </a>
                 {offer.taskerTier === 'kyc' && (
                   <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">KYC ✓</span>
                 )}

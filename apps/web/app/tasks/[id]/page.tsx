@@ -25,20 +25,20 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     : { data: null }
 
   type OfferRow = {
-    id: string; amount_paise: number; message: string | null; status: string; created_at: string;
+    id: string; taskerId: string; amount_paise: number; message: string | null; status: string; created_at: string;
     taskerName: string; taskerRating: number | null; taskerRatingCount: number; taskerTier: string;
   }
   let offers: OfferRow[] = []
   if (isPoster) {
     const { data: offerData } = await supabase
       .from('offers')
-      .select('id, amount_paise, message, status, created_at, profiles!tasker_id(name, rating_avg, rating_count, verification_tier)')
+      .select('id, tasker_id, amount_paise, message, status, created_at, profiles!tasker_id(name, rating_avg, rating_count, verification_tier)')
       .eq('task_id', id)
       .order('amount_paise', { ascending: true })
     offers = (offerData ?? []).map(o => {
       const p = o.profiles as unknown as { name: string; rating_avg: number | null; rating_count: number; verification_tier: string } | null
       return {
-        id: o.id, amount_paise: o.amount_paise, message: o.message, status: o.status, created_at: o.created_at,
+        id: o.id, taskerId: o.tasker_id, amount_paise: o.amount_paise, message: o.message, status: o.status, created_at: o.created_at,
         taskerName: p?.name ?? 'Tasker', taskerRating: p?.rating_avg ?? null,
         taskerRatingCount: p?.rating_count ?? 0, taskerTier: p?.verification_tier ?? 'none',
       }

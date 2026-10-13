@@ -7,12 +7,17 @@ export const metadata = { title: 'Browse tasks' }
 export default async function TaskFeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; q?: string }>
+  searchParams: Promise<{ type?: string; q?: string; category?: string }>
 }) {
-  const { type, q } = await searchParams
+  const { type, q, category } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/sign-in')
+
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('id, name, slug, icon')
+    .order('name')
 
   let query = supabase
     .from('tasks')
@@ -29,6 +34,11 @@ export default async function TaskFeedPage({
     query = query.ilike('title', `%${q}%`)
   }
 
+  if (category) {
+    const cat = categories?.find(c => c.slug === category)
+    if (cat) query = query.eq('category_id', cat.id)
+  }
+
   const { data: tasks } = await query
 
   return (
@@ -41,8 +51,8 @@ export default async function TaskFeedPage({
               + Post task
             </Link>
           </div>
-          {/* Filters */}
-          <div className="flex gap-2">
+          {/* Type filters */}
+          <div className="flex gap-2 flex-wrap">
             {[
               { value: '', label: 'All' },
               { value: 'in_person', label: '📍 In person' },
@@ -51,7 +61,7 @@ export default async function TaskFeedPage({
             ].map(({ value, label }) => (
               <Link
                 key={value}
-                href={value ? `/tasks?type=${value}` : '/tasks'}
+                href={value ? `/tasks?type=${value}${category ? `&category=${category}` : ''}` : `/tasks${category ? `?category=${category}` : ''}`}
                 className={`rounded-full px-3 py-1 text-sm font-semibold transition-colors ${
                   (type ?? '') === value
                     ? 'bg-brand-600 text-white'
@@ -62,6 +72,34 @@ export default async function TaskFeedPage({
               </Link>
             ))}
           </div>
+          {/* Category chips */}
+          {categories && categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Link
+                href={type ? `/tasks?type=${type}` : '/tasks'}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  !category
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:border-amber-300'
+                }`}
+              >
+                All
+              </Link>
+              {categories.map(cat => (
+                <Link
+                  key={cat.slug}
+                  href={`/tasks?category=${cat.slug}${type ? `&type=${type}` : ''}`}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                    category === cat.slug
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-white border border-gray-200 text-gray-700 hover:border-amber-300'
+                  }`}
+                >
+                  {cat.icon} {cat.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
