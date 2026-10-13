@@ -3,6 +3,7 @@ export type Locale = typeof LOCALES[number]
 export const RTL_LOCALES: Locale[] = ['ur']
 export const DEFAULT_LOCALE: Locale = 'hi'
 export const FALLBACK_LOCALE: Locale = 'en'
+export const LOCALE_COOKIE = 'taim_locale'
 
 export function isRTL(locale: Locale): boolean {
   return RTL_LOCALES.includes(locale)
@@ -26,3 +27,6 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   ml: 'മലയാളം',
   pa: 'ਪੰਜਾਬੀ',
 }
+
+export { t } from './translations'
+export type { TranslationKey } from './translations'

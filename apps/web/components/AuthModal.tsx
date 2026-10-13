@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Suspense } from 'react'
 import SignInForm from '@/components/auth/SignInForm'
 import SignUpForm from '@/components/auth/SignUpForm'
+import { useLocale } from '@/components/LocaleProvider'
 
 interface Props {
   open: boolean
@@ -14,6 +15,7 @@ interface Props {
 
 export default function AuthModal({ open, onClose, defaultTab = 'sign-in' }: Props) {
   const [tab, setTab] = useState<'sign-in' | 'sign-up'>(defaultTab)
+  const { t } = useLocale()
   const pathname = usePathname()
   const prevPath = useRef(pathname)
 
@@ -72,15 +74,15 @@ export default function AuthModal({ open, onClose, defaultTab = 'sign-in' }: Pro
 
         {/* Tabs */}
         <div className="mb-6 flex rounded-xl bg-gray-100 p-1">
-          {(['sign-in', 'sign-up'] as const).map(t => (
+          {(['sign-in', 'sign-up'] as const).map(tabKey => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabKey}
+              onClick={() => setTab(tabKey)}
               className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
-                tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                tab === tabKey ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              {t === 'sign-in' ? 'Sign in' : 'Create account'}
+              {tabKey === 'sign-in' ? t('auth.tab_sign_in') : t('auth.tab_create')}
             </button>
           ))}
         </div>
@@ -95,15 +97,15 @@ export default function AuthModal({ open, onClose, defaultTab = 'sign-in' }: Pro
 
         <p className="mt-5 text-center text-sm text-gray-500">
           {tab === 'sign-in' ? (
-            <>No account?{' '}
+            <>{t('auth.no_account')}{' '}
               <button onClick={() => setTab('sign-up')} className="font-semibold text-amber-600 hover:underline">
-                Create one free
+                {t('auth.create_one_free')}
               </button>
             </>
           ) : (
-            <>Already have one?{' '}
+            <>{t('auth.have_account')}{' '}
               <button onClick={() => setTab('sign-in')} className="font-semibold text-amber-600 hover:underline">
-                Sign in
+                {t('auth.sign_in_link')}
               </button>
             </>
           )}

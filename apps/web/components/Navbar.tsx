@@ -7,9 +7,11 @@ import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import AuthModal from '@/components/AuthModal'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { useLocale } from '@/components/LocaleProvider'
 
 export default function Navbar() {
   const pathname = usePathname()
+  const { t } = useLocale()
   const [user, setUser] = useState<User | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalTab, setModalTab] = useState<'sign-in' | 'sign-up'>('sign-in')
@@ -59,11 +61,11 @@ export default function Navbar() {
           {/* Centre links (desktop) */}
           <nav className="hidden items-center gap-6 sm:flex">
             <Link href="/tasks" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              Browse tasks
+              {t('nav.browse_tasks')}
             </Link>
             {user && (
               <Link href="/tasks/new" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-                Post a task
+                {t('nav.post_task')}
               </Link>
             )}
           </nav>
@@ -73,27 +75,25 @@ export default function Navbar() {
             <LanguageSwitcher />
 
             {user ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-amber-400 hover:text-amber-600 transition-colors"
-                >
-                  Dashboard
-                </Link>
-              </>
+              <Link
+                href="/dashboard"
+                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-amber-400 hover:text-amber-600 transition-colors"
+              >
+                {t('nav.dashboard')}
+              </Link>
             ) : (
               <>
                 <button
                   onClick={openSignIn}
                   className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-amber-400 hover:text-amber-600 transition-colors"
                 >
-                  Sign in
+                  {t('nav.sign_in')}
                 </button>
                 <button
                   onClick={openSignUp}
                   className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-amber-600 transition-colors"
                 >
-                  Join free
+                  {t('nav.join_free')}
                 </button>
               </>
             )}
