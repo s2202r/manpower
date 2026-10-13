@@ -12,7 +12,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, roles, verification_tier, rating_avg, rating_count')
+    .select('name, roles, verification_tier, rating_avg, rating_count, referral_code, referral_count')
     .eq('id', user.id)
     .single()
 
@@ -162,6 +162,18 @@ export default async function DashboardPage() {
               </div>
             )}
           </section>
+        )}
+
+        {/* Invite friends */}
+        {profile?.referral_code && (
+          <div className="rounded-2xl bg-amber-50 border border-amber-200 p-5">
+            <h3 className="font-bold text-amber-900 mb-1">Invite friends 🎁</h3>
+            <p className="text-sm text-amber-700 mb-3">Share your link and grow the community.</p>
+            <div className="flex items-center gap-2 bg-white rounded-xl px-4 py-2.5 border border-amber-200 mb-2">
+              <code className="flex-1 text-sm font-mono text-amber-800">taim.in/invite/{profile.referral_code}</code>
+            </div>
+            <p className="text-xs text-amber-600">{(profile.referral_count as number) ?? 0} people joined with your code</p>
+          </div>
         )}
 
         {/* Empty state for new users */}
