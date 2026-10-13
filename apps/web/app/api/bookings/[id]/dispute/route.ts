@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendEmail, emailDisputeOpened } from '@/lib/email'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: bookingId } = await params
@@ -44,6 +45,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .insert({ booking_id: bookingId, raised_by: user.id, reason: reason.trim() })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Non-blocking email to dispute raiser
+  const { data: bookingWithTask } = await supabase
+    .from('bookings')
+    .select('task_id, tasks!task_id(title)')
+    .eq('id', bookingId)
+    .single()
+
+  const taskTitle = (bookingWithTask?.tasks as unknown as { title: string } | null)?.title ?? 'your task'
+
+  void sendEmail({
+    to: user.email!,
+    ...emailDisputeOpened({
+      taskTitle,
+      adminUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://taim.in'}/bookings/${bookingId}`,
+    }),
+  })
 
   return NextResponse.json({ ok: true })
 }

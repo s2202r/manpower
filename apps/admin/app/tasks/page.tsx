@@ -1,90 +1,116 @@
+import Link from 'next/link'
 import { requireAdmin } from '@/lib/require-admin'
 import { createAdminClient } from '@/lib/supabase'
-import Link from 'next/link'
 
-export const metadata = { title: 'Tasks — Taim Admin' }
+export const metadata = { title: 'Task Moderation — Admin' }
 
-export default async function AdminTasksPage({ searchParams }: { searchParams: Promise<{ status?: string; page?: string }> }) {
+const STATUS_COLOR: Record<string, string> = {
+  open: 'bg-green-100 text-green-700',
+  draft: 'bg-gray-100 text-gray-500',
+  assigned: 'bg-blue-100 text-blue-700',
+  in_progress: 'bg-indigo-100 text-indigo-700',
+  tasker_done: 'bg-orange-100 text-orange-700',
+  completed: 'bg-gray-100 text-gray-600',
+}
+
+export default async function AdminTasksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; mod?: string }>
+}) {
   await requireAdmin()
-  const { status, page } = await searchParams
-  const db = createAdminClient()
-  const pageNum = Math.max(1, Number(page ?? 1))
-  const pageSize = 50
-  const offset = (pageNum - 1) * pageSize
+  const supabase = createAdminClient()
+  const { q, mod } = await searchParams
 
-  let query = db.from('tasks')
-    .select('id, title, status, task_type, budget_paise, offer_count, created_at, poster_id, profiles(name)', { count: 'exact' })
+  let query = supabase
+    .from('tasks')
+    .select('id, title, type, status, budget_paise, moderation_status, created_at, profiles!poster_id(name, email)', { count: 'exact' })
     .order('created_at', { ascending: false })
-    .range(offset, offset + pageSize - 1)
+    .limit(50)
 
-  if (status) query = query.eq('status', status)
+  if (q) query = query.ilike('title', `%${q}%`)
+  if (mod === 'suspended') query = query.eq('moderation_status', 'suspended')
+  else if (!mod) query = query.eq('moderation_status', 'ok')
 
-  const { data: tasks, count } = await query
-  const totalPages = Math.ceil((count ?? 0) / pageSize)
-
-  const STATUSES = ['open','assigned','in_progress','tasker_done','completed','cancelled','disputed','expired']
+  const { data: tasks } = await query
+  const fmtRs = (p: number) => `₹${Math.round(p / 100).toLocaleString('en-IN')}`
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
-        <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">← Dashboard</Link>
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Task moderation</h1>
+        <div className="flex gap-2 text-sm">
+          <Link href="/tasks" className={`px-3 py-1.5 rounded-lg font-medium ${!mod ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>Active</Link>
+          <Link href="/tasks?mod=suspended" className={`px-3 py-1.5 rounded-lg font-medium ${mod === 'suspended' ? 'bg-red-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>Suspended</Link>
+          <Link href="/tasks?mod=all" className={`px-3 py-1.5 rounded-lg font-medium ${mod === 'all' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>All</Link>
+        </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Link href="/tasks" className={`rounded-full px-3 py-1 text-xs font-medium ${!status ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>All</Link>
-        {STATUSES.map(s => (
-          <Link key={s} href={`?status=${s}`}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${status === s ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
-            {s}
-          </Link>
-        ))}
-      </div>
+      <form action="/tasks" className="mb-5">
+        {mod && <input type="hidden" name="mod" value={mod} />}
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="Search task titles…"
+          className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+        />
+      </form>
 
-      <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="border-b border-gray-100 text-xs text-gray-500 uppercase">
+          <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              {['Title', 'Poster', 'Status', 'Budget', 'Offers', 'Created'].map(h => (
-                <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
-              ))}
+              <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase text-xs tracking-wide">Task</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase text-xs tracking-wide">Poster</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase text-xs tracking-wide">Budget</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase text-xs tracking-wide">Status</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase text-xs tracking-wide">Mod</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {(tasks ?? []).map(t => {
-              const poster = t.profiles as unknown as { name: string } | null
+            {(tasks ?? []).map(task => {
+              const poster = task.profiles as unknown as { name: string; email: string } | null
+              const isSuspended = task.moderation_status === 'suspended'
               return (
-                <tr key={t.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate">{t.title as string}</td>
-                  <td className="px-4 py-3 text-gray-600">{poster?.name ?? '—'}</td>
+                <tr key={task.id} className={isSuspended ? 'bg-red-50' : 'hover:bg-gray-50'}>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      t.status === 'open' ? 'bg-green-100 text-green-700'
-                      : t.status === 'completed' ? 'bg-blue-100 text-blue-700'
-                      : t.status === 'disputed' ? 'bg-red-100 text-red-700'
-                      : 'bg-gray-100 text-gray-600'
-                    }`}>{t.status as string}</span>
+                    <p className="font-medium text-gray-900 max-w-xs truncate">{task.title}</p>
+                    <p className="text-xs text-gray-400">{task.type}</p>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">₹{Math.round((t.budget_paise as number) / 100).toLocaleString('en-IN')}</td>
-                  <td className="px-4 py-3 text-gray-600">{t.offer_count as number}</td>
-                  <td className="px-4 py-3 text-gray-500">{new Date(t.created_at as string).toLocaleDateString('en-IN')}</td>
+                  <td className="px-4 py-3">
+                    <p className="text-gray-700">{poster?.name ?? '—'}</p>
+                    <p className="text-xs text-gray-400">{poster?.email ?? ''}</p>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-gray-700">{fmtRs(task.budget_paise as number)}</td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${STATUS_COLOR[task.status as string] ?? 'bg-gray-100 text-gray-500'}`}>
+                      {(task.status as string).replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {isSuspended
+                      ? <span className="rounded-full bg-red-100 text-red-700 px-2.5 py-1 text-xs font-bold">Suspended</span>
+                      : <span className="rounded-full bg-green-100 text-green-700 px-2.5 py-1 text-xs font-bold">OK</span>
+                    }
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/tasks/${task.id}`}
+                      className="text-sm font-semibold text-amber-600 hover:text-amber-800 transition-colors"
+                    >
+                      Review →
+                    </Link>
+                  </td>
                 </tr>
               )
             })}
           </tbody>
         </table>
+        {(tasks ?? []).length === 0 && (
+          <p className="px-5 py-8 text-center text-sm text-gray-400">No tasks found.</p>
+        )}
       </div>
-
-      {totalPages > 1 && (
-        <div className="mt-4 flex gap-2 justify-center">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-            <Link key={p} href={`?page=${p}${status ? `&status=${status}` : ''}`}
-              className={`rounded-lg px-3 py-1 text-sm ${p === pageNum ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
-              {p}
-            </Link>
-          ))}
-        </div>
-      )}
-    </main>
+    </div>
   )
 }
