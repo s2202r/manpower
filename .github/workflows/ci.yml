@@ -30,7 +30,7 @@ jobs:
         run: pnpm --filter @taim/core exec tsc --noEmit
 
       - name: Run unit tests
-        run: pnpm --filter @taim/core test --run
+        run: pnpm --filter @taim/core run test
 
       - name: Type check (web)
         run: pnpm --filter @taim/web exec tsc --noEmit
