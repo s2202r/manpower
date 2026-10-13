@@ -2,11 +2,13 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { APP_TAGLINE } from '@taim/config'
 
+export const revalidate = 60
+
 export default async function HomePage() {
   const supabase = await createClient()
 
   const [{ data: categories }, { data: recentTasks }] = await Promise.all([
-    supabase.from('task_categories').select('id, name, icon, slug').order('name').limit(8),
+    supabase.from('categories').select('id, name, icon, slug').order('name').limit(8),
     supabase
       .from('tasks')
       .select('id, title, type, budget_paise, display_area, created_at')

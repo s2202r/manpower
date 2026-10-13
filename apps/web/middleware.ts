@@ -39,6 +39,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  const protectedPaths = ['/dashboard', '/onboarding', '/tasks/new']
+  const isProtected = protectedPaths.some(p => pathname.startsWith(p))
+
+  // Only hit Supabase on routes that actually need auth — avoids a round-trip on every public page
+  if (!isProtected) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -60,10 +68,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const protectedPaths = ['/dashboard', '/onboarding', '/tasks/new']
-  const isProtected = protectedPaths.some(p => pathname.startsWith(p))
-
-  if (isProtected && !user) {
+  if (!user) {
     return NextResponse.redirect(new URL('/auth/sign-in', request.url))
   }
 

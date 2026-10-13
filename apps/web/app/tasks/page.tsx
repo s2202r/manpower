@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import SearchBox from '@/components/tasks/SearchBox'
 
 export const metadata = { title: 'Browse tasks' }
+export const revalidate = 30
 
 export default async function TaskFeedPage({
   searchParams,
@@ -13,8 +13,6 @@ export default async function TaskFeedPage({
 }) {
   const { type, q, category } = await searchParams
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/sign-in')
 
   const { data: categories } = await supabase
     .from('categories')
@@ -33,7 +31,7 @@ export default async function TaskFeedPage({
   }
 
   if (q) {
-    query = query.ilike('title', `%${q}%`)
+    query = query.textSearch('search_vector', q, { type: 'websearch', config: 'english' })
   }
 
   if (category) {
@@ -45,7 +43,7 @@ export default async function TaskFeedPage({
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-10 border-b border-gray-100 bg-white px-4 py-4">
+      <header className="sticky top-16 z-10 border-b border-gray-100 bg-white px-4 py-4">
         <div className="mx-auto max-w-2xl">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl font-bold">Browse tasks</h1>
