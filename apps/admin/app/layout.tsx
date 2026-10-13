@@ -12,6 +12,7 @@ const NAV = [
   { href: '/payouts', label: 'Payouts' },
   { href: '/kyc', label: 'KYC' },
   { href: '/webhooks', label: 'Webhooks' },
+  { href: '/categories', label: 'Categories' },
 ]
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

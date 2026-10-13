@@ -19,6 +19,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: 'Home', tabBarLabel: 'Home' }} />
       <Tabs.Screen name="browse" options={{ title: 'Browse', tabBarLabel: 'Browse' }} />
       <Tabs.Screen name="activity" options={{ title: 'Activity', tabBarLabel: 'Activity' }} />
+      <Tabs.Screen name="notifications" options={{ title: 'Alerts', tabBarLabel: 'Alerts', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🔔</Text> }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarLabel: 'Profile' }} />
     </Tabs>
   )
