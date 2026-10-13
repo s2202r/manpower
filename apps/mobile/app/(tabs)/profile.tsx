@@ -40,6 +40,10 @@ export default function ProfileTab() {
       </View>
 
       <View style={s.section}>
+        <TouchableOpacity style={[s.row, s.actionRow]} onPress={() => router.push('/profile/edit')}>
+          <Text style={s.actionLabel}>Edit profile</Text>
+          <Text style={s.chevron}>›</Text>
+        </TouchableOpacity>
         {tier !== 'kyc' && (
           <TouchableOpacity style={[s.row, s.actionRow]} onPress={() => Alert.alert('KYC', 'Open the Taim web app to complete KYC verification.')}>
             <Text style={s.actionLabel}>Get KYC verified</Text>
