@@ -1,0 +1,23 @@
+{
+  "name": "Taim — India's Task Marketplace",
+  "short_name": "Taim",
+  "description": "Post any task, get offers from verified Taskers, pay securely in escrow.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "categories": ["lifestyle", "shopping", "business"],
+  "lang": "hi",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
