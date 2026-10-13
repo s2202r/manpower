@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { notify } from '@/lib/notify'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -41,6 +42,11 @@ export async function POST(request: Request) {
 
   // Update reviewee's aggregate rating
   await supabase.rpc('update_rating_aggregate', { p_profile_id: body.revieweeId })
+
+  // Notify reviewee
+  const { data: reviewerProfile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+  const reviewerName = reviewerProfile?.full_name ?? 'Someone'
+  void notify({ supabase, userId: body.revieweeId, kind: 'review_received', title: 'You received a review', body: `${reviewerName} gave you ${body.rating} stars.`, link: `/dashboard` })
 
   return NextResponse.json({ ok: true })
 }

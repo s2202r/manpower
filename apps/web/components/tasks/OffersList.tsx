@@ -2,85 +2,100 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-
-interface OfferProfile {
-  name: string
-  photo_url: string | null
-  rating_avg: number | null
-  rating_count: number
-}
 
 interface Offer {
   id: string
-  tasker_id: string
   amount_paise: number
   message: string | null
   status: string
-  profiles: OfferProfile | null
+  created_at: string
+  taskerName: string
+  taskerRating: number | null
+  taskerRatingCount: number
+  taskerTier: string
 }
 
-export default function OffersList({ taskId, offers, taskStatus }: {
-  taskId: string
-  offers: Offer[]
-  taskStatus: string
-}) {
+export default function OffersList({ offers, taskStatus }: { offers: Offer[]; taskStatus: string }) {
   const router = useRouter()
   const [accepting, setAccepting] = useState<string | null>(null)
 
-  async function acceptOffer(offerId: string, taskerId: string) {
+  async function accept(offerId: string) {
     setAccepting(offerId)
-    const supabase = createClient()
-    await supabase.from('offers').update({ status: 'accepted' }).eq('id', offerId)
-    await supabase.from('offers').update({ status: 'rejected' }).eq('task_id', taskId).neq('id', offerId)
-    await supabase.from('tasks').update({ status: 'assigned', assigned_tasker_id: taskerId }).eq('id', taskId)
+    const res = await fetch(`/api/offers/${offerId}/accept`, { method: 'POST' })
     setAccepting(null)
-    router.refresh()
+    if (res.ok) router.refresh()
+    else {
+      const data = await res.json() as { error?: string }
+      alert(data.error ?? 'Something went wrong')
+    }
+  }
+
+  if (offers.length === 0) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-gray-200 p-8 text-center text-gray-500">
+        <p className="text-lg font-semibold">No offers yet</p>
+        <p className="text-sm mt-1">Taskers nearby will send you offers soon.</p>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-900">Offers ({offers.length})</h2>
-      {offers.map(offer => {
-        const profile = offer.profiles
-        return (
-          <div key={offer.id} className="rounded-2xl bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold">
-                  {profile?.name?.[0]?.toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">{profile?.name}</p>
-                  {profile && profile.rating_count > 0 && (
-                    <p className="text-xs text-gray-500">⭐ {profile.rating_avg?.toFixed(1)} ({profile.rating_count})</p>
-                  )}
-                </div>
+    <div className="space-y-3">
+      {offers.map(offer => (
+        <div
+          key={offer.id}
+          className={`rounded-2xl border p-5 transition-colors ${
+            offer.status === 'accepted'
+              ? 'border-green-200 bg-green-50'
+              : offer.status === 'rejected'
+              ? 'border-gray-100 bg-gray-50 opacity-60'
+              : 'border-gray-200 bg-white hover:border-amber-200'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-gray-900">{offer.taskerName}</span>
+                {offer.taskerTier === 'kyc' && (
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">KYC ✓</span>
+                )}
+                {offer.taskerRating && offer.taskerRatingCount > 0 && (
+                  <span className="text-sm text-amber-600 font-semibold">
+                    ⭐ {offer.taskerRating.toFixed(1)} ({offer.taskerRatingCount})
+                  </span>
+                )}
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-brand-600">
-                  ₹{(offer.amount_paise / 100).toLocaleString('en-IN')}
-                </p>
-                <span className={`text-xs font-semibold capitalize ${
-                  offer.status === 'accepted' ? 'text-green-600'
-                  : offer.status === 'rejected' ? 'text-red-500'
-                  : 'text-yellow-600'
-                }`}>{offer.status}</span>
-              </div>
+              {offer.message && (
+                <p className="mt-2 text-sm text-gray-600 leading-relaxed">{offer.message}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-400">
+                {new Date(offer.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
-            {offer.message && <p className="text-gray-600 text-sm mb-3">{offer.message}</p>}
-            {taskStatus === 'open' && offer.status === 'pending' && (
-              <button
-                onClick={() => acceptOffer(offer.id, offer.tasker_id)}
-                disabled={accepting === offer.id}
-                className="w-full rounded-xl bg-green-600 py-2 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-              >
-                {accepting === offer.id ? 'Accepting…' : 'Accept this offer'}
-              </button>
-            )}
+
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+              <span className="text-2xl font-black text-amber-600">
+                ₹{Math.round(offer.amount_paise / 100).toLocaleString('en-IN')}
+              </span>
+              {offer.status === 'accepted' && (
+                <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">Accepted ✓</span>
+              )}
+              {offer.status === 'rejected' && (
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-500">Rejected</span>
+              )}
+              {offer.status === 'pending' && taskStatus === 'open' && (
+                <button
+                  onClick={() => accept(offer.id)}
+                  disabled={accepting === offer.id}
+                  className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-white hover:bg-amber-600 disabled:opacity-60 transition-colors"
+                >
+                  {accepting === offer.id ? 'Accepting…' : 'Accept offer'}
+                </button>
+              )}
+            </div>
           </div>
-        )
-      })}
+        </div>
+      ))}
     </div>
   )
 }

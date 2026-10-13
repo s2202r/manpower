@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getPaymentProvider, canTransition } from '@taim/core'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { notify } from '@/lib/notify'
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: bookingId } = await params
@@ -68,6 +69,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   // Increment tasker's completed task count
   await supabase.rpc('increment_completed_tasks', { p_profile_id: booking.tasker_id })
+
+  // Notify tasker
+  void notify({ supabase, userId: booking.tasker_id, kind: 'payment_released', title: 'Payment released! 🎉', body: `₹${Math.round(booking.tasker_payout_paise / 100).toLocaleString('en-IN')} has been sent to your account.`, link: `/bookings/${booking.id}` })
 
   return NextResponse.json({ ok: true, payoutId: payout.payoutId })
 }

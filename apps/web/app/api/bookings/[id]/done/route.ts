@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { canTransition } from '@taim/core'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { notify } from '@/lib/notify'
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: bookingId } = await params
@@ -11,7 +12,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const { data: booking } = await supabase
     .from('bookings')
-    .select('id, task_id, tasker_id, escrow_state')
+    .select('id, task_id, poster_id, tasker_id, escrow_state')
     .eq('id', bookingId)
     .single()
 
@@ -33,6 +34,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     completion_otp_hash: otpHash,
     auto_release_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
   }).eq('id', bookingId)
+
+  // Notify poster
+  void notify({ supabase, userId: booking.poster_id, kind: 'task_done', title: 'Task marked complete', body: 'Your Tasker has marked the task as done. Enter the OTP to release payment.', link: `/bookings/${booking.id}` })
 
   // In production, send OTP to poster via notification/WhatsApp.
   // For now, return it in the response (dev only).

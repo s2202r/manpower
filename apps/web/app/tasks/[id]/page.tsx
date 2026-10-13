@@ -24,13 +24,26 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     ? await supabase.from('offers').select('*').eq('task_id', id).eq('tasker_id', user.id).single()
     : { data: null }
 
-  const { data: offers } = isPoster
-    ? await supabase
-        .from('offers')
-        .select('*, profiles!tasker_id(name, photo_url, rating_avg, rating_count)')
-        .eq('task_id', id)
-        .order('created_at')
-    : { data: null }
+  type OfferRow = {
+    id: string; amount_paise: number; message: string | null; status: string; created_at: string;
+    taskerName: string; taskerRating: number | null; taskerRatingCount: number; taskerTier: string;
+  }
+  let offers: OfferRow[] = []
+  if (isPoster) {
+    const { data: offerData } = await supabase
+      .from('offers')
+      .select('id, amount_paise, message, status, created_at, profiles!tasker_id(name, rating_avg, rating_count, verification_tier)')
+      .eq('task_id', id)
+      .order('amount_paise', { ascending: true })
+    offers = (offerData ?? []).map(o => {
+      const p = o.profiles as unknown as { name: string; rating_avg: number | null; rating_count: number; verification_tier: string } | null
+      return {
+        id: o.id, amount_paise: o.amount_paise, message: o.message, status: o.status, created_at: o.created_at,
+        taskerName: p?.name ?? 'Tasker', taskerRating: p?.rating_avg ?? null,
+        taskerRatingCount: p?.rating_count ?? 0, taskerTier: p?.verification_tier ?? 'none',
+      }
+    })
+  }
 
   const category = task.categories as { names: Record<string, string>; icon: string } | null
   const poster = task.profiles as { name: string; photo_url: string | null; rating_avg: number | null; rating_count: number } | null
@@ -104,14 +117,10 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
         )}
 
         {/* Offers list for poster */}
-        {isPoster && offers && offers.length > 0 && (
-          <OffersList taskId={task.id} offers={offers} taskStatus={task.status} />
-        )}
-
-        {isPoster && task.status === 'open' && (!offers || offers.length === 0) && (
-          <div className="rounded-2xl bg-white p-6 shadow-sm text-center text-gray-500">
-            <p className="text-lg">No offers yet</p>
-            <p className="text-sm mt-1">Taskers nearby will see your task and send offers.</p>
+        {isPoster && (
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">Offers ({offers.length})</h2>
+            <OffersList offers={offers} taskStatus={task.status} />
           </div>
         )}
       </div>

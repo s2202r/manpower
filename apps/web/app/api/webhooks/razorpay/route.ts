@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { RazorpayProvider } from '@taim/core'
 import { NextResponse } from 'next/server'
+import { notify } from '@/lib/notify'
 
 export async function POST(request: Request) {
   const rawBody = await request.text()
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     // Mark booking as held (escrow)
     const { data: booking } = await supabase
       .from('bookings')
-      .select('id, task_id, tasker_id, tasker_payout_paise')
+      .select('id, task_id, poster_id, tasker_id, tasker_payout_paise')
       .eq('payment_order_id', event.orderId)
       .single()
 
@@ -58,6 +59,10 @@ export async function POST(request: Request) {
       // Mark webhook processed
       await supabase.from('webhook_events').update({ processed_at: new Date().toISOString() })
         .eq('idempotency_key', event.idempotencyKey)
+
+      // Notify tasker and poster
+      void notify({ supabase, userId: booking.tasker_id, kind: 'payment_held', title: 'Payment secured', body: 'The poster\'s payment is in escrow. You can start the task.', link: `/bookings/${booking.id}` })
+      void notify({ supabase, userId: booking.poster_id, kind: 'payment_held', title: 'Payment confirmed', body: 'Your payment is secured in escrow. The Tasker will begin shortly.', link: `/bookings/${booking.id}` })
     }
   }
 
