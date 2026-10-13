@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { RazorpayProvider } from '@taim/core'
 import { NextResponse } from 'next/server'
 import { notify } from '@/lib/notify'
+import { sendEmail, emailEscrowHeld } from '@/lib/email'
 
 export async function POST(request: Request) {
   const rawBody = await request.text()
@@ -63,6 +64,29 @@ export async function POST(request: Request) {
       // Notify tasker and poster
       void notify({ supabase, userId: booking.tasker_id, kind: 'payment_held', title: 'Payment secured', body: 'The poster\'s payment is in escrow. You can start the task.', link: `/bookings/${booking.id}` })
       void notify({ supabase, userId: booking.poster_id, kind: 'payment_held', title: 'Payment confirmed', body: 'Your payment is secured in escrow. The Tasker will begin shortly.', link: `/bookings/${booking.id}` })
+
+      // Non-blocking: email tasker that escrow is held
+      const { data: bookingData } = await supabase
+        .from('bookings')
+        .select('id, amount_paise, tasks!task_id(title), profiles!tasker_id(email, name)')
+        .eq('id', booking.id)
+        .single()
+
+      if (bookingData) {
+        const tasker = bookingData.profiles as unknown as { email: string; name: string } | null
+        const task = bookingData.tasks as unknown as { title: string } | null
+        if (tasker?.email) {
+          void sendEmail({
+            to: tasker.email,
+            ...emailEscrowHeld({
+              taskerName: tasker.name ?? 'Tasker',
+              taskTitle: task?.title ?? 'your task',
+              amountRs: Math.round((bookingData.amount_paise as number) / 100),
+              bookingUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://taim.in'}/bookings/${bookingData.id}`,
+            }),
+          })
+        }
+      }
     }
   }
 

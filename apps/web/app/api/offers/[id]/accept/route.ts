@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendEmail, emailOfferAccepted } from '@/lib/email'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: offerId } = await params
@@ -30,6 +31,29 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   ])
 
   if (e1 || e2 || e3) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+
+  // Non-blocking: notify tasker their offer was accepted
+  const { data: offerData } = await supabase
+    .from('offers')
+    .select('amount_paise, tasks!task_id(title, id), profiles!tasker_id(email, name)')
+    .eq('id', offerId)
+    .single()
+
+  if (offerData) {
+    const taskerProfile = offerData.profiles as unknown as { email: string; name: string } | null
+    const task = offerData.tasks as unknown as { title: string; id: string } | null
+    if (taskerProfile?.email) {
+      void sendEmail({
+        to: taskerProfile.email,
+        ...emailOfferAccepted({
+          taskerName: taskerProfile.name ?? 'Tasker',
+          taskTitle: task?.title ?? 'your task',
+          amountRs: Math.round((offerData.amount_paise as number) / 100),
+          taskUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://taim.in'}/tasks/${task?.id}`,
+        }),
+      })
+    }
+  }
 
   return NextResponse.json({ ok: true, taskId: offer.task_id })
 }

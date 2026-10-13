@@ -3,6 +3,7 @@ import { canTransition } from '@taim/core'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { notify } from '@/lib/notify'
+import { sendEmail, emailTaskerDone } from '@/lib/email'
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: bookingId } = await params
@@ -37,6 +38,28 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   // Notify poster
   void notify({ supabase, userId: booking.poster_id, kind: 'task_done', title: 'Task marked complete', body: 'Your Tasker has marked the task as done. Enter the OTP to release payment.', link: `/bookings/${booking.id}` })
+
+  // Non-blocking: email poster that tasker marked done
+  const { data: bookingData } = await supabase
+    .from('bookings')
+    .select('id, tasks!task_id(title), profiles!poster_id(email, name)')
+    .eq('id', bookingId)
+    .single()
+
+  if (bookingData) {
+    const poster = bookingData.profiles as unknown as { email: string; name: string } | null
+    const task = bookingData.tasks as unknown as { title: string } | null
+    if (poster?.email) {
+      void sendEmail({
+        to: poster.email,
+        ...emailTaskerDone({
+          posterName: poster.name ?? 'Poster',
+          taskTitle: task?.title ?? 'your task',
+          bookingUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://taim.in'}/bookings/${bookingData.id}`,
+        }),
+      })
+    }
+  }
 
   // In production, send OTP to poster via notification/WhatsApp.
   // For now, return it in the response (dev only).
