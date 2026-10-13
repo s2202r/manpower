@@ -64,6 +64,9 @@ values (
 )
 on conflict (id) do nothing;
 
+drop policy if exists "User uploads own kyc doc" on storage.objects;
+drop policy if exists "User reads own kyc doc" on storage.objects;
+
 -- Only the owning user can upload their own KYC document
 create policy "User uploads own kyc doc"
   on storage.objects for insert
