@@ -9,6 +9,11 @@ values (
 )
 on conflict (id) do nothing;
 
+-- Drop policies first so re-running migrations is idempotent
+drop policy if exists "Task photos are publicly viewable" on storage.objects;
+drop policy if exists "Users upload task photos" on storage.objects;
+drop policy if exists "Users delete own task photos" on storage.objects;
+
 -- Anyone can view task photos (public bucket)
 create policy "Task photos are publicly viewable"
   on storage.objects for select using (bucket_id = 'task-photos');
