@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 const ROLES = [
   {
@@ -34,14 +33,15 @@ export default function RolePickerClient() {
     if (!selected || saving) return
     setSaving(true)
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/auth/sign-in'); return }
-
     const roles = selected === 'both' ? ['poster', 'tasker'] : [selected]
-    await supabase.from('profiles').update({ roles }).eq('id', user.id)
+    const res = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roles }),
+    })
 
     setSaving(false)
+    if (!res.ok) { router.push('/auth/sign-in'); return }
     router.push('/onboarding/locale')
   }
 

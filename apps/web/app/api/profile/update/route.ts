@@ -6,13 +6,17 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json() as { name?: string; bio?: string; preferred_locale?: string; display_area?: string }
+  const body = await req.json() as { name?: string; bio?: string; preferred_locale?: string; display_area?: string; roles?: string[] }
 
-  const updates: Record<string, string> = {}
+  const updates: Record<string, unknown> = {}
   if (body.name && body.name.trim().length >= 2) updates.name = body.name.trim().slice(0, 80)
   if (body.bio !== undefined) updates.bio = body.bio.trim().slice(0, 500)
   if (body.preferred_locale) updates.preferred_locale = body.preferred_locale
   if (body.display_area !== undefined) updates.display_area = body.display_area.trim().slice(0, 100)
+  if (Array.isArray(body.roles) && body.roles.length > 0) {
+    const valid = ['poster', 'tasker']
+    updates.roles = body.roles.filter(r => valid.includes(r))
+  }
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 const LOCALES = [
   { code: 'en', label: 'English', native: 'English' },
@@ -26,11 +25,11 @@ export default function LocalePickerClient() {
 
   async function save() {
     setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      await supabase.from('profiles').update({ preferred_locale: selected }).eq('id', user.id)
-    }
+    await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferred_locale: selected }),
+    })
     setSaving(false)
     router.push('/dashboard')
   }
