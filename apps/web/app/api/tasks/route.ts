@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-const VALID_TYPES = ['fixed', 'hourly'] as const
+const VALID_TYPES = ['in_person', 'pickup_drop', 'remote'] as const
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json() as {
     title?: string
     description?: string
-    type?: string
+    task_type?: string
     budget_paise?: number
     category_id?: string | null
     display_area?: string | null
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   const title = body.title?.trim()
   const description = body.description?.trim()
-  const type = body.type
+  const task_type = body.task_type
   const budget_paise = body.budget_paise
 
   if (!title || title.length < 5 || title.length > 120) {
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   if (!description || description.length < 20) {
     return NextResponse.json({ error: 'Description must be at least 20 characters' }, { status: 400 })
   }
-  if (!VALID_TYPES.includes(type as typeof VALID_TYPES[number])) {
+  if (!VALID_TYPES.includes(task_type as typeof VALID_TYPES[number])) {
     return NextResponse.json({ error: 'Invalid task type' }, { status: 400 })
   }
   if (!budget_paise || budget_paise < 10000 || !Number.isInteger(budget_paise)) {
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const { data: task, error } = await supabase.from('tasks').insert({
     title,
     description,
-    type,
+    task_type,
     budget_paise,
     category_id: body.category_id ?? null,
     display_area: body.display_area?.trim() ?? null,
