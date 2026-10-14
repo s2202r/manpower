@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import AreaPicker, { type AreaValue } from '@/components/AreaPicker'
+import Spinner from '@/components/Spinner'
 
 const LOCALES = [
   { code: 'en', label: 'English' }, { code: 'hi', label: 'हिन्दी' },
@@ -23,7 +25,12 @@ export default function ProfileEditForm({ initialName, initialBio, initialLocale
   const [name, setName] = useState(initialName)
   const [bio, setBio] = useState(initialBio)
   const [locale, setLocale] = useState(initialLocale)
-  const [area, setArea] = useState(initialArea)
+  const [area, setArea] = useState<AreaValue>({
+    mode: initialArea.toLowerCase().includes('online') ? 'online' : 'city',
+    displayArea: initialArea,
+    lat: null,
+    lng: null,
+  })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -36,7 +43,7 @@ export default function ProfileEditForm({ initialName, initialBio, initialLocale
     const res = await fetch('/api/profile/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, bio, preferred_locale: locale, display_area: area }),
+      body: JSON.stringify({ name, bio, preferred_locale: locale, display_area: area.displayArea }),
     })
     setSaving(false)
     if (res.ok) { setSaved(true); router.refresh() }
@@ -91,14 +98,8 @@ export default function ProfileEditForm({ initialName, initialBio, initialLocale
           <p className="text-right text-xs text-gray-400 mt-1">{bio.length}/500</p>
         </Field>
 
-        <Field label="Service area" hint="City, neighbourhood, or 'Online'">
-          <input
-            value={area}
-            onChange={e => setArea(e.target.value)}
-            maxLength={100}
-            placeholder="e.g. Andheri, Mumbai"
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-amber-400 focus:outline-none"
-          />
+        <Field label="Service area" hint="Where you offer your services">
+          <AreaPicker value={area} onChange={setArea} />
         </Field>
 
         <Field label="Preferred language">
@@ -121,7 +122,8 @@ export default function ProfileEditForm({ initialName, initialBio, initialLocale
         <Link href="/dashboard" className="flex-1 rounded-xl border border-gray-200 py-3 text-center text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
           Cancel
         </Link>
-        <button type="submit" disabled={saving || name.trim().length < 2} className="flex-1 rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={saving || name.trim().length < 2} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors">
+          {saving && <Spinner />}
           {saving ? 'Saving…' : 'Save profile'}
         </button>
       </div>
