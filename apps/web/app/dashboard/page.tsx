@@ -31,14 +31,31 @@ export default async function DashboardPage() {
     : [null, null, null, null]
 
   // --- Tasker stats ---
-  const [taskerOffersRes, taskerAcceptedRes, taskerEarnedRes, taskerRecentRes] = isTasker
+  const [taskerOffersRes, taskerAcceptedRes, taskerEarnedRes, taskerRecentRes, taskerOpenRes] = isTasker
     ? await Promise.all([
         supabase.from('offers').select('id', { count: 'exact', head: true }).eq('tasker_id', user.id),
         supabase.from('offers').select('id', { count: 'exact', head: true }).eq('tasker_id', user.id).eq('status', 'accepted'),
         supabase.from('bookings').select('tasker_payout_paise').eq('tasker_id', user.id).eq('escrow_state', 'released'),
-        supabase.from('offers').select('id, amount_paise, status, task_id, created_at, tasks(title)').eq('tasker_id', user.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('offers').select('id, amount_paise, status, task_id, created_at, tasks(title, task_type, display_area, status)').eq('tasker_id', user.id).order('created_at', { ascending: false }).limit(5),
+        // Open tasks not yet offered on by this tasker
+        supabase.from('tasks')
+          .select('id, title, task_type, budget_paise, display_area, created_at, categories(names, icon)')
+          .eq('status', 'open')
+          .not('id', 'in', `(select task_id from offers where tasker_id = '${user.id}')`)
+          .order('created_at', { ascending: false })
+          .limit(6),
       ])
-    : [null, null, null, null]
+    : [null, null, null, null, null]
+
+  // Poster: tasks needing attention (open with offers, or in progress)
+  const { data: attentionTasks } = isPoster
+    ? await supabase.from('tasks')
+        .select('id, title, status, offer_count, budget_paise, task_type, display_area')
+        .eq('poster_id', user.id)
+        .in('status', ['open', 'assigned', 'in_progress', 'tasker_done'])
+        .order('created_at', { ascending: false })
+        .limit(10)
+    : { data: null }
 
   const totalSpent = (posterSpentRes?.data ?? []).reduce((s, b) => s + (b.amount_paise as number), 0)
   const totalEarned = (taskerEarnedRes?.data ?? []).reduce((s, b) => s + (b.tasker_payout_paise as number), 0)
@@ -91,31 +108,39 @@ export default async function DashboardPage() {
               <StatTile label="Total spent" value={`₹${Math.round(totalSpent / 100).toLocaleString('en-IN')}`} color="amber" />
             </div>
 
-            {posterRecentRes?.data && posterRecentRes.data.length > 0 && (
+            {attentionTasks && attentionTasks.length > 0 ? (
               <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                  <span className="font-semibold text-gray-900">Recent tasks</span>
-                  <Link href="/tasks" className="text-sm text-amber-600 hover:text-amber-700 font-medium">View all →</Link>
+                  <span className="font-semibold text-gray-900">Active tasks</span>
+                  <Link href="/tasks?poster=me" className="text-sm text-amber-600 hover:text-amber-700 font-medium">All my tasks →</Link>
                 </div>
                 <ul className="divide-y divide-gray-50">
-                  {posterRecentRes.data.map(task => (
-                    <li key={task.id}>
-                      <Link href={`/tasks/${task.id}`} className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
-                        <div>
-                          <p className="font-semibold text-gray-900 text-sm">{task.title}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{task.offer_count} offers · ₹{Math.round((task.budget_paise as number) / 100).toLocaleString('en-IN')}</p>
-                        </div>
-                        <StatusBadge status={task.status as string} />
-                      </Link>
-                    </li>
-                  ))}
+                  {attentionTasks.map(task => {
+                    const needsAction = task.status === 'tasker_done' || (task.status === 'open' && (task.offer_count as number) > 0)
+                    return (
+                      <li key={task.id}>
+                        <Link href={`/tasks/${task.id}`} className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-gray-900 text-sm truncate">{task.title}</p>
+                              {needsAction && <span className="shrink-0 h-2 w-2 rounded-full bg-amber-500" title="Needs action" />}
+                            </div>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {task.task_type === 'in_person' ? '📍' : task.task_type === 'pickup_drop' ? '🛵' : '💻'}{' '}
+                              {task.display_area ?? task.task_type} · ₹{Math.round((task.budget_paise as number) / 100).toLocaleString('en-IN')}
+                              {task.status === 'open' && (task.offer_count as number) > 0 && ` · ${task.offer_count} offer${(task.offer_count as number) !== 1 ? 's' : ''}`}
+                            </p>
+                          </div>
+                          <StatusBadge status={task.status as string} />
+                        </Link>
+                      </li>
+                    )
+                  })}
                 </ul>
               </div>
-            )}
-
-            {(!posterRecentRes?.data || posterRecentRes.data.length === 0) && (
+            ) : (
               <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-                <p className="text-gray-500 mb-4">No tasks yet. Post your first task to get started.</p>
+                <p className="text-gray-500 mb-4">No active tasks. Post your first task to get started.</p>
                 <Link href="/tasks/new" className="inline-block rounded-xl bg-amber-500 px-5 py-2.5 font-bold text-white hover:bg-amber-600 transition-colors">
                   Post a task
                 </Link>
@@ -143,13 +168,16 @@ export default async function DashboardPage() {
                 </div>
                 <ul className="divide-y divide-gray-50">
                   {taskerRecentRes.data.map((offer: Record<string, unknown>) => {
-                    const task = offer.tasks as { title: string } | null
+                    const task = offer.tasks as { title: string; task_type: string; display_area: string | null; status: string } | null
                     return (
                       <li key={offer.id as string}>
                         <Link href={`/tasks/${offer.task_id as string}`} className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
-                          <div>
-                            <p className="font-semibold text-gray-900 text-sm">{task?.title ?? 'Task'}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">₹{Math.round((offer.amount_paise as number) / 100).toLocaleString('en-IN')}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-gray-900 text-sm truncate">{task?.title ?? 'Task'}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {task?.task_type === 'in_person' ? '📍' : task?.task_type === 'pickup_drop' ? '🛵' : '💻'}{' '}
+                              {task?.display_area ?? task?.task_type} · ₹{Math.round((offer.amount_paise as number) / 100).toLocaleString('en-IN')}
+                            </p>
                           </div>
                           <StatusBadge status={offer.status as string} />
                         </Link>
@@ -166,6 +194,42 @@ export default async function DashboardPage() {
                 <Link href="/tasks" className="inline-block rounded-xl bg-amber-500 px-5 py-2.5 font-bold text-white hover:bg-amber-600 transition-colors">
                   Browse tasks
                 </Link>
+              </div>
+            )}
+
+            {/* Available tasks feed */}
+            {taskerOpenRes?.data && taskerOpenRes.data.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-gray-900">Tasks available for you</h3>
+                  <Link href="/tasks" className="text-sm text-amber-600 hover:text-amber-700 font-medium">Browse all →</Link>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(taskerOpenRes.data as Record<string, unknown>[]).map(task => {
+                    const cat = task.categories as { names: Record<string, string>; icon: string } | null
+                    return (
+                      <Link
+                        key={task.id as string}
+                        href={`/tasks/${task.id as string}`}
+                        className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            {cat && <p className="text-xs text-amber-600 font-semibold mb-1">{cat.icon} {cat.names?.['en']}</p>}
+                            <p className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2">{task.title as string}</p>
+                          </div>
+                          <span className="shrink-0 text-lg font-black text-brand-600">
+                            ₹{Math.round((task.budget_paise as number) / 100).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {task.task_type === 'in_person' ? '📍' : task.task_type === 'pickup_drop' ? '🛵' : '💻'}{' '}
+                          {(task.display_area as string) ?? task.task_type as string}
+                        </p>
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </section>
