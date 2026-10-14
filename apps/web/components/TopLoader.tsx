@@ -10,6 +10,28 @@ export default function TopLoader() {
   const prevPath = useRef<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Show immediately on any internal link click — don't wait for pathname to update
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      const target = (e.target as HTMLElement).closest('a')
+      if (!target) return
+      const href = target.getAttribute('href')
+      if (!href) return
+      // Only internal same-origin links, skip hash-only and external
+      if (href.startsWith('http') || href.startsWith('//') || href.startsWith('#')) return
+      // Skip if modified click (open in new tab etc.)
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      // Skip if target="_blank"
+      if (target.target === '_blank') return
+      setVisible(true)
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => setVisible(false), 3000)
+    }
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [])
+
+  // Hide once the new route is actually rendered
   useEffect(() => {
     const key = pathname + searchParams.toString()
     if (prevPath.current === null) {
@@ -19,11 +41,9 @@ export default function TopLoader() {
     if (prevPath.current === key) return
     prevPath.current = key
 
-    // Show overlay
-    setVisible(true)
+    // Route changed — hide overlay shortly after render
     if (timerRef.current) clearTimeout(timerRef.current)
-    // Auto-hide after 600ms in case navigation was instant
-    timerRef.current = setTimeout(() => setVisible(false), 600)
+    timerRef.current = setTimeout(() => setVisible(false), 150)
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)

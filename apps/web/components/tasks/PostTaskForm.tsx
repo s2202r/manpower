@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import AreaPicker, { AddressInput, type AreaValue } from '@/components/AreaPicker'
+import Spinner from '@/components/Spinner'
 
 interface Category {
   id: string
@@ -238,8 +239,9 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
       <button
         type="submit"
         disabled={uploading}
-        className="w-full rounded-xl bg-brand-600 py-4 font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-4 font-bold text-white hover:bg-brand-700 disabled:opacity-50"
       >
+        {uploading && <Spinner />}
         {uploading ? 'Posting task…' : 'Post task'}
       </button>
     </form>
