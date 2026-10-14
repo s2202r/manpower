@@ -86,7 +86,7 @@ const RADII = [5, 10, 20, 50, 100] as const
 
 const MODES: { id: AreaMode; icon: string; label: string }[] = [
   { id: 'city',   icon: '🏙',  label: 'City' },
-  { id: 'radius', icon: '🗺',  label: 'City + radius' },
+  { id: 'radius', icon: '🗺',  label: 'Location + radius' },
   { id: 'cities', icon: '📍',  label: 'Multiple cities' },
   { id: 'online', icon: '💻',  label: 'Online' },
 ]
@@ -96,6 +96,7 @@ const MODES: { id: AreaMode; icon: string; label: string }[] = [
 export default function AreaPicker({ value, onChange, hideOnline = false }: Props) {
   const [citySearch, setCitySearch] = useState('')
   const [showCityList, setShowCityList] = useState(false)
+  const [locationText, setLocationText] = useState('')
 
   const modes = hideOnline ? MODES.filter(m => m.id !== 'online') : MODES
 
@@ -107,6 +108,7 @@ export default function AreaPicker({ value, onChange, hideOnline = false }: Prop
     }
     setCitySearch('')
     setShowCityList(false)
+    setLocationText('')
   }
 
   function pickCity(city: typeof CITIES[number]) {
@@ -114,6 +116,7 @@ export default function AreaPicker({ value, onChange, hideOnline = false }: Prop
       onChange({ ...value, displayArea: `${city.name}, ${city.state}`, lat: city.lat, lng: city.lng })
     } else if (value.mode === 'radius') {
       const r = value.radiusKm ?? 10
+      setLocationText(city.name)
       onChange({ ...value, displayArea: `Within ${r}km of ${city.name}`, lat: city.lat, lng: city.lng })
     } else if (value.mode === 'cities') {
       const existing = value.displayArea ? value.displayArea.split(', ') : []
@@ -132,14 +135,18 @@ export default function AreaPicker({ value, onChange, hideOnline = false }: Prop
   }
 
   function setRadius(r: number) {
-    const cityPart = value.lat !== null
-      ? CITIES.find(c => Math.abs(c.lat - (value.lat ?? 0)) < 0.01)?.name ?? ''
-      : ''
+    const loc = locationText.trim()
     onChange({
       ...value,
       radiusKm: r,
-      displayArea: cityPart ? `Within ${r}km of ${cityPart}` : '',
+      displayArea: loc ? `Within ${r}km of ${loc}` : '',
     })
+  }
+
+  function handleLocationInput(text: string) {
+    setLocationText(text)
+    const r = value.radiusKm ?? 10
+    onChange({ ...value, displayArea: text.trim() ? `Within ${r}km of ${text.trim()}` : '', lat: null, lng: null })
   }
 
   const filteredCities = CITIES.filter(c =>
@@ -200,19 +207,25 @@ export default function AreaPicker({ value, onChange, hideOnline = false }: Prop
         </div>
       )}
 
-      {/* City + radius */}
+      {/* Location + radius */}
       {value.mode === 'radius' && (
         <div className="space-y-2">
           <div className="relative">
             <input
               type="text"
               className={inputClass}
-              placeholder="Pick a city…"
-              value={citySearch || (value.lat ? CITIES.find(c => Math.abs(c.lat - (value.lat ?? 0)) < 0.01)?.name ?? '' : '')}
-              onFocus={() => { setCitySearch(''); setShowCityList(true) }}
-              onChange={e => { setCitySearch(e.target.value); setShowCityList(true) }}
+              placeholder="Type a location, area or neighbourhood…"
+              value={showCityList ? citySearch : (locationText || '')}
+              onFocus={() => { setCitySearch(locationText); setShowCityList(true) }}
+              onChange={e => {
+                const v = e.target.value
+                setCitySearch(v)
+                setShowCityList(true)
+                handleLocationInput(v)
+              }}
+              onBlur={() => setTimeout(() => setShowCityList(false), 150)}
             />
-            {showCityList && (
+            {showCityList && filteredCities.length > 0 && (
               <CityDropdown
                 cities={filteredCities}
                 onPick={pickCity}
