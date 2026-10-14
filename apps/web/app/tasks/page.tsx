@@ -2,16 +2,17 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import SearchBox from '@/components/tasks/SearchBox'
+import TaskFilters from '@/components/tasks/TaskFilters'
 
 export const metadata = { title: 'Browse tasks' }
-export const revalidate = 30
+export const revalidate = 0
 
 export default async function TaskFeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; q?: string; category?: string }>
+  searchParams: Promise<{ type?: string; q?: string; category?: string; minBudget?: string; maxBudget?: string; sort?: string }>
 }) {
-  const { type, q, category } = await searchParams
+  const { type, q, category, minBudget, maxBudget, sort } = await searchParams
   const supabase = await createClient()
 
   const { data: categories } = await supabase
@@ -19,11 +20,15 @@ export default async function TaskFeedPage({
     .select('id, name, slug, icon')
     .order('name')
 
+  const sortBy = sort === 'budget_asc' ? { col: 'budget_paise', asc: true }
+    : sort === 'budget_desc' ? { col: 'budget_paise', asc: false }
+    : { col: 'created_at', asc: false }
+
   let query = supabase
     .from('tasks')
     .select('id, title, description, task_type, budget_paise, display_area, status, date_from, date_flexibility, created_at, categories(names, icon)')
     .eq('status', 'open')
-    .order('created_at', { ascending: false })
+    .order(sortBy.col, { ascending: sortBy.asc })
     .limit(50)
 
   if (type && ['in_person', 'pickup_drop', 'remote'].includes(type)) {
@@ -38,6 +43,11 @@ export default async function TaskFeedPage({
     const cat = categories?.find(c => c.slug === category)
     if (cat) query = query.eq('category_id', cat.id)
   }
+
+  const minP = minBudget ? Math.round(parseFloat(minBudget) * 100) : null
+  const maxP = maxBudget ? Math.round(parseFloat(maxBudget) * 100) : null
+  if (minP && minP > 0) query = query.gte('budget_paise', minP)
+  if (maxP && maxP > 0) query = query.lte('budget_paise', maxP)
 
   const { data: tasks } = await query
 
@@ -62,55 +72,12 @@ export default async function TaskFeedPage({
               <SearchBox defaultValue={q ?? ''} />
             </Suspense>
           </div>
-          {/* Type filters */}
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { value: '', label: 'All' },
-              { value: 'in_person', label: '📍 In person' },
-              { value: 'pickup_drop', label: '🛵 Pickup–drop' },
-              { value: 'remote', label: '💻 Remote' },
-            ].map(({ value, label }) => (
-              <Link
-                key={value}
-                href={value ? `/tasks?type=${value}${category ? `&category=${category}` : ''}` : `/tasks${category ? `?category=${category}` : ''}`}
-                className={`rounded-full px-3 py-1 text-sm font-semibold transition-colors ${
-                  (type ?? '') === value
-                    ? 'bg-brand-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-          {/* Category chips */}
-          {categories && categories.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              <Link
-                href={type ? `/tasks?type=${type}` : '/tasks'}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                  !category
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-white border border-gray-200 text-gray-700 hover:border-amber-300'
-                }`}
-              >
-                All
-              </Link>
-              {categories.map(cat => (
-                <Link
-                  key={cat.slug}
-                  href={`/tasks?category=${cat.slug}${type ? `&type=${type}` : ''}`}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                    category === cat.slug
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-white border border-gray-200 text-gray-700 hover:border-amber-300'
-                  }`}
-                >
-                  {cat.icon} {cat.name}
-                </Link>
-              ))}
-            </div>
-          )}
+          <Suspense fallback={null}>
+            <TaskFilters
+              categories={categories ?? []}
+              current={{ type, category, minBudget, maxBudget, sort, q }}
+            />
+          </Suspense>
         </div>
       </header>
 

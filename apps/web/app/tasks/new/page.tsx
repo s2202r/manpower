@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import PostTaskForm from './PostTaskForm'
+import PostTaskForm from '@/components/tasks/PostTaskForm'
 
 export const metadata = { title: 'Post a Task — Taim' }
 
@@ -11,8 +11,8 @@ export default async function NewTaskPage() {
 
   const { data: categories } = await supabase
     .from('categories')
-    .select('id, name, icon')
-    .order('name')
+    .select('id, slug, names, icon, allowed_types, is_live')
+    .order('slug')
 
   return (
     <main className="min-h-screen bg-gray-50">
