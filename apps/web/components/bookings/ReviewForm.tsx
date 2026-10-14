@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Spinner from '@/components/Spinner'
 
 interface Props {
   bookingId: string
@@ -83,8 +84,9 @@ export default function ReviewForm({ bookingId, revieweeId, revieweeName }: Prop
       <button
         type="submit"
         disabled={rating === 0 || submitting}
-        className="w-full rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
       >
+        {submitting && <Spinner />}
         {submitting ? 'Submitting…' : 'Submit review'}
       </button>
     </form>

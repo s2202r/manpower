@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Spinner from '@/components/Spinner'
 
 export default function SignInForm() {
   const router = useRouter()
@@ -68,8 +69,9 @@ export default function SignInForm() {
 
       <button
         type="submit" disabled={loading}
-        className="w-full rounded-lg bg-brand-600 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
       >
+        {loading && <Spinner />}
         {loading ? 'Please wait…' : mode === 'magic' ? 'Send magic link' : 'Sign in'}
       </button>
 

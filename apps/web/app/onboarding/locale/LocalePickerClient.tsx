@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Spinner from '@/components/Spinner'
 
 const LOCALES = [
   { code: 'en', label: 'English', native: 'English' },
@@ -56,8 +57,9 @@ export default function LocalePickerClient() {
       <button
         onClick={save}
         disabled={saving}
-        className="w-full rounded-2xl bg-amber-500 py-4 font-bold text-white hover:bg-amber-600 disabled:opacity-60 transition-colors"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-4 font-bold text-white hover:bg-amber-600 disabled:opacity-60 transition-colors"
       >
+        {saving && <Spinner />}
         {saving ? 'Saving…' : 'Get started →'}
       </button>
     </div>

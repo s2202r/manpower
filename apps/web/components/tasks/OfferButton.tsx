@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import Spinner from '@/components/Spinner'
 
 interface Offer {
   id: string
@@ -84,7 +85,8 @@ export default function OfferButton({ taskId, existingOffer }: { taskId: string;
         <button type="button" onClick={() => setOpen(false)}
           className="flex-1 rounded-xl border-2 border-gray-300 py-3 font-semibold text-gray-700">Cancel</button>
         <button type="submit" disabled={loading}
-          className="flex-1 rounded-xl bg-brand-600 py-3 font-bold text-white hover:bg-brand-700 disabled:opacity-50">
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 font-bold text-white hover:bg-brand-700 disabled:opacity-50">
+          {loading && <Spinner />}
           {loading ? 'Sending…' : 'Send offer'}
         </button>
       </div>

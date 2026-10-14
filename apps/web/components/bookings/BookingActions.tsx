@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Spinner from '@/components/Spinner'
 
 interface Props {
   bookingId: string
@@ -48,8 +49,9 @@ export default function BookingActions({ bookingId, taskId, escrowState, taskSta
             if (data.otp) setDevOtp(data.otp as string)
           }}
           disabled={loading !== null}
-          className="w-full rounded-xl bg-brand-600 py-3 font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 font-bold text-white hover:bg-brand-700 disabled:opacity-50"
         >
+          {loading && <Spinner />}
           {loading ? 'Processing…' : 'Mark as done'}
         </button>
       </div>
@@ -71,15 +73,17 @@ export default function BookingActions({ bookingId, taskId, escrowState, taskSta
         <button
           onClick={() => callApi(`/api/bookings/${bookingId}/confirm`, { otp })}
           disabled={otp.length !== 6 || loading !== null}
-          className="w-full rounded-xl bg-green-600 py-3 font-bold text-white hover:bg-green-700 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-3 font-bold text-white hover:bg-green-700 disabled:opacity-50"
         >
+          {loading === `/api/bookings/${bookingId}/confirm` && <Spinner />}
           {loading ? 'Confirming…' : 'Confirm & release payment'}
         </button>
         <button
           onClick={() => callApi(`/api/bookings/${bookingId}/refund`, { reason: 'Poster disputed completion' })}
           disabled={loading !== null}
-          className="w-full rounded-xl border-2 border-red-400 py-3 font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-400 py-3 font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
         >
+          {loading === `/api/bookings/${bookingId}/refund` && <Spinner className="h-4 w-4 text-red-600" />}
           Raise a dispute
         </button>
       </div>

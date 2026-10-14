@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Spinner from '@/components/Spinner'
 
 export default function DisputeForm({ bookingId }: { bookingId: string }) {
   const router = useRouter()
@@ -72,8 +73,9 @@ export default function DisputeForm({ bookingId }: { bookingId: string }) {
         <button
           type="submit"
           disabled={reason.trim().length < 10 || submitting}
-          className="flex-1 rounded-xl bg-orange-500 py-2.5 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
         >
+          {submitting && <Spinner />}
           {submitting ? 'Raising…' : 'Raise dispute'}
         </button>
       </div>

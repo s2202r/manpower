@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Spinner from '@/components/Spinner'
 
 interface Offer {
   id: string
@@ -90,8 +91,9 @@ export default function OffersList({ offers, taskStatus }: { offers: Offer[]; ta
                 <button
                   onClick={() => accept(offer.id)}
                   disabled={accepting === offer.id}
-                  className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-white hover:bg-amber-600 disabled:opacity-60 transition-colors"
+                  className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-white hover:bg-amber-600 disabled:opacity-60 transition-colors"
                 >
+                  {accepting === offer.id && <Spinner className="h-3.5 w-3.5" />}
                   {accepting === offer.id ? 'Accepting…' : 'Accept offer'}
                 </button>
               )}

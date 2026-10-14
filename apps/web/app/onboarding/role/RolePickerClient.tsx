@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Spinner from '@/components/Spinner'
 
 const ROLES = [
   {
@@ -77,8 +78,9 @@ export default function RolePickerClient() {
       <button
         onClick={save}
         disabled={!selected || saving}
-        className="mt-2 w-full rounded-2xl bg-amber-500 py-4 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
+        className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-4 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
       >
+        {saving && <Spinner />}
         {saving ? 'Saving…' : 'Continue →'}
       </button>
     </div>

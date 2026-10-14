@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Spinner from '@/components/Spinner'
 
 interface Props {
   bookingId: string
@@ -73,8 +74,9 @@ export default function PaymentCheckout({ bookingId, offerId, totalPaise, orderI
       <button
         onClick={initiatePayment}
         disabled={loading}
-        className="w-full rounded-xl bg-brand-600 py-4 text-lg font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-4 text-lg font-bold text-white hover:bg-brand-700 disabled:opacity-50"
       >
+        {loading && <Spinner />}
         {loading ? 'Opening payment…' : `Pay ₹${Math.round(totalPaise / 100).toLocaleString('en-IN')}`}
       </button>
       <p className="text-center text-xs text-gray-500">

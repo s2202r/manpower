@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Spinner from '@/components/Spinner'
 
 const DOCUMENT_TYPES = [
   { value: 'aadhaar', label: 'Aadhaar Card' },
@@ -69,7 +70,8 @@ export default function KycForm({ userId }: { userId: string }) {
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       <button type="submit" disabled={loading || !docType || !file || !consent}
-        className="w-full rounded-xl bg-brand-600 py-3 font-bold text-white hover:bg-brand-700 disabled:opacity-50">
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 font-bold text-white hover:bg-brand-700 disabled:opacity-50">
+        {loading && <Spinner />}
         {loading ? 'Uploading…' : 'Submit for verification'}
       </button>
     </form>

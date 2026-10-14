@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from 'next'
 import { cookies } from 'next/headers'
+import { Suspense } from 'react'
 import './globals.css'
 import CookieBanner from '@/components/CookieBanner'
 import Navbar from '@/components/Navbar'
+import TopLoader from '@/components/TopLoader'
 import { LocaleProvider } from '@/components/LocaleProvider'
 import { LOCALES, DEFAULT_LOCALE, LOCALE_COOKIE, getDir, type Locale } from '@taim/i18n'
 
@@ -66,6 +68,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={locale} dir={dir}>
       <body className="min-h-screen bg-white text-gray-900 antialiased">
         <LocaleProvider initial={locale}>
+          <Suspense fallback={null}>
+            <TopLoader />
+          </Suspense>
           <Navbar />
           {children}
           <CookieBanner />
