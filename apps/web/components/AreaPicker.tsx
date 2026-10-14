@@ -29,7 +29,7 @@ interface Props {
 
 // ─── City data (50 major Indian cities) ──────────────────────────────────────
 
-const CITIES = [
+const CITIES: { name: string; state: string; lat: number; lng: number }[] = [
   { name: 'Mumbai',         state: 'MH', lat: 19.0760, lng: 72.8777 },
   { name: 'Delhi',          state: 'DL', lat: 28.7041, lng: 77.1025 },
   { name: 'Bengaluru',      state: 'KA', lat: 12.9716, lng: 77.5946 },
