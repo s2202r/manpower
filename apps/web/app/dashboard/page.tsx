@@ -47,14 +47,13 @@ export default async function DashboardPage() {
       ])
     : [null, null, null, null, null]
 
-  // Poster: tasks needing attention (open with offers, or in progress)
+  // Poster: all tasks they've posted
   const { data: attentionTasks } = isPoster
     ? await supabase.from('tasks')
-        .select('id, title, status, offer_count, budget_paise, task_type, display_area')
+        .select('id, title, status, offer_count, budget_paise, task_type, display_area, created_at')
         .eq('poster_id', user.id)
-        .in('status', ['open', 'assigned', 'in_progress', 'tasker_done'])
         .order('created_at', { ascending: false })
-        .limit(10)
+        .limit(20)
     : { data: null }
 
   const totalSpent = (posterSpentRes?.data ?? []).reduce((s, b) => s + (b.amount_paise as number), 0)
@@ -111,8 +110,8 @@ export default async function DashboardPage() {
             {attentionTasks && attentionTasks.length > 0 ? (
               <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                  <span className="font-semibold text-gray-900">Active tasks</span>
-                  <Link href="/tasks?poster=me" className="text-sm text-amber-600 hover:text-amber-700 font-medium">All my tasks →</Link>
+                  <span className="font-semibold text-gray-900">My posted tasks</span>
+                  <Link href="/tasks/new" className="text-sm text-amber-600 hover:text-amber-700 font-medium">+ Post new</Link>
                 </div>
                 <ul className="divide-y divide-gray-50">
                   {attentionTasks.map(task => {
@@ -140,7 +139,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-                <p className="text-gray-500 mb-4">No active tasks. Post your first task to get started.</p>
+                <p className="text-gray-500 mb-4">No tasks yet. Post your first task to get started.</p>
                 <Link href="/tasks/new" className="inline-block rounded-xl bg-amber-500 px-5 py-2.5 font-bold text-white hover:bg-amber-600 transition-colors">
                   Post a task
                 </Link>
