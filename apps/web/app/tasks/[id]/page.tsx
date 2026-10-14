@@ -7,14 +7,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const supabase = await createClient()
   const { data: task } = await supabase
     .from('tasks')
-    .select('title, description, budget_paise, type, display_area')
+    .select('title, description, budget_paise, task_type, display_area')
     .eq('id', id)
     .single()
 
   if (!task) return { title: 'Task not found' }
 
   const budgetRs = Math.round((task.budget_paise as number) / 100)
-  const desc = `₹${budgetRs.toLocaleString('en-IN')} · ${task.type} · ${task.display_area ?? 'India'}${task.description ? ' — ' + (task.description as string).slice(0, 120) : ''}`
+  const desc = `₹${budgetRs.toLocaleString('en-IN')} · ${task.task_type} · ${task.display_area ?? 'India'}${task.description ? ' — ' + (task.description as string).slice(0, 120) : ''}`
 
   return {
     title: task.title as string,
@@ -123,6 +123,23 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             )}
             {task.date_from && (
               <div><span className="font-semibold">Date:</span> {task.date_from}</div>
+            )}
+            {task.precise_address && isAssignedTasker && (
+              <div className="col-span-2 mt-1 flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
+                <span className="text-lg">📍</span>
+                <div>
+                  <p className="text-xs font-semibold text-amber-700 mb-0.5">Exact address</p>
+                  <p className="text-sm text-gray-800">{task.precise_address as string}</p>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.precise_address as string)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-amber-600 hover:text-amber-800"
+                  >
+                    Open in Google Maps →
+                  </a>
+                </div>
+              </div>
             )}
           </div>
 

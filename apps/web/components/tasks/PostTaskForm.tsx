@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import AreaPicker, { AddressInput, type AreaValue } from '@/components/AreaPicker'
 
 interface Category {
   id: string
@@ -22,13 +23,9 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
   const [description, setDescription] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [taskType, setTaskType] = useState<'in_person' | 'pickup_drop' | 'remote'>('in_person')
-  const [displayArea, setDisplayArea] = useState('')
-  const [lat, setLat] = useState('')
-  const [lng, setLng] = useState('')
-  const [pickupLat, setPickupLat] = useState('')
-  const [pickupLng, setPickupLng] = useState('')
-  const [dropoffLat, setDropoffLat] = useState('')
-  const [dropoffLng, setDropoffLng] = useState('')
+  const [area, setArea] = useState<AreaValue>({ mode: 'city', displayArea: '', lat: null, lng: null })
+  const [pickupArea, setPickupArea] = useState<AreaValue>({ mode: 'city', displayArea: '', lat: null, lng: null })
+  const [dropoffArea, setDropoffArea] = useState<AreaValue>({ mode: 'city', displayArea: '', lat: null, lng: null })
   const [budgetRupees, setBudgetRupees] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateFlexibility, setDateFlexibility] = useState<'exact' | 'week' | 'month'>('exact')
@@ -67,11 +64,9 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/auth/sign-in'); return }
 
-    // Build location helpers
-    function toPoint(latStr: string, lngStr: string) {
-      const la = parseFloat(latStr), lo = parseFloat(lngStr)
-      if (isNaN(la) || isNaN(lo)) return null
-      return `SRID=4326;POINT(${lo} ${la})`
+    function toPoint(lat: number | null, lng: number | null) {
+      if (lat === null || lng === null) return null
+      return `SRID=4326;POINT(${lng} ${lat})`
     }
 
     const taskPayload: Record<string, unknown> = {
@@ -83,22 +78,30 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
       budget_paise: budgetPaise,
       date_from: dateFrom || null,
       date_flexibility: dateFlexibility,
-      display_area: displayArea,
       status: 'open',
       photos: [],
     }
 
     if (taskType === 'in_person') {
-      const point = toPoint(lat, lng)
-      if (!point) { setError('Please enter valid coordinates'); setUploading(false); return }
-      taskPayload.location = point
+      if (!area.displayArea) { setError('Please select a service area'); setUploading(false); return }
+      taskPayload.display_area = area.displayArea
+      if (area.address) taskPayload.precise_address = area.address
+      const point = toPoint(area.lat, area.lng)
+      if (point) taskPayload.location = point
     } else if (taskType === 'pickup_drop') {
-      const pickup = toPoint(pickupLat, pickupLng)
-      const dropoff = toPoint(dropoffLat, dropoffLng)
-      if (!pickup || !dropoff) { setError('Please enter valid pickup and dropoff coordinates'); setUploading(false); return }
-      taskPayload.pickup_location = pickup
-      taskPayload.dropoff_location = dropoff
-      taskPayload.location = pickup
+      if (!pickupArea.displayArea || !dropoffArea.displayArea) {
+        setError('Please select pickup and dropoff areas'); setUploading(false); return
+      }
+      taskPayload.display_area = `${pickupArea.displayArea} → ${dropoffArea.displayArea}`
+      const pickupAddr = [pickupArea.address, dropoffArea.address].filter(Boolean).join(' → ')
+      if (pickupAddr) taskPayload.precise_address = pickupAddr
+      const pickup = toPoint(pickupArea.lat, pickupArea.lng)
+      const dropoff = toPoint(dropoffArea.lat, dropoffArea.lng)
+      if (pickup) { taskPayload.pickup_location = pickup; taskPayload.location = pickup }
+      if (dropoff) taskPayload.dropoff_location = dropoff
+    } else {
+      // remote
+      taskPayload.display_area = 'Online / Remote'
     }
 
     const { data: task, error: insertError } = await supabase
@@ -177,54 +180,20 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
       {/* Location */}
       {taskType === 'in_person' && (
         <div className="space-y-3 rounded-xl bg-gray-50 p-4">
-          <p className="font-medium text-gray-700">📍 Task location</p>
-          <div>
-            <label className={labelClass}>Display area (shown to Taskers)</label>
-            <input type="text" value={displayArea} onChange={e => setDisplayArea(e.target.value)}
-              className={inputClass} placeholder="e.g. Sector 62, Noida" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>Latitude</label>
-              <input type="number" step="any" value={lat} onChange={e => setLat(e.target.value)}
-                className={inputClass} placeholder="28.6139" required />
-            </div>
-            <div>
-              <label className={labelClass}>Longitude</label>
-              <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)}
-                className={inputClass} placeholder="77.3704" required />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500">Exact address is hidden until a Tasker is assigned.</p>
+          <p className="font-medium text-gray-700">📍 Service area</p>
+          <AreaPicker value={area} onChange={setArea} hideOnline />
+          <AddressInput onAddress={(addr, lat, lng) => setArea(a => ({ ...a, lat: lat ?? a.lat, lng: lng ?? a.lng, address: addr }))} />
         </div>
       )}
 
       {taskType === 'pickup_drop' && (
         <div className="space-y-3 rounded-xl bg-gray-50 p-4">
-          <p className="font-medium text-gray-700">🛵 Pickup & dropoff</p>
-          <div>
-            <label className={labelClass}>Display area</label>
-            <input type="text" value={displayArea} onChange={e => setDisplayArea(e.target.value)}
-              className={inputClass} placeholder="e.g. Noida to Delhi" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>Pickup lat</label>
-              <input type="number" step="any" value={pickupLat} onChange={e => setPickupLat(e.target.value)} className={inputClass} required />
-            </div>
-            <div>
-              <label className={labelClass}>Pickup lng</label>
-              <input type="number" step="any" value={pickupLng} onChange={e => setPickupLng(e.target.value)} className={inputClass} required />
-            </div>
-            <div>
-              <label className={labelClass}>Dropoff lat</label>
-              <input type="number" step="any" value={dropoffLat} onChange={e => setDropoffLat(e.target.value)} className={inputClass} required />
-            </div>
-            <div>
-              <label className={labelClass}>Dropoff lng</label>
-              <input type="number" step="any" value={dropoffLng} onChange={e => setDropoffLng(e.target.value)} className={inputClass} required />
-            </div>
-          </div>
+          <p className="font-medium text-gray-700">🛵 Pickup location</p>
+          <AreaPicker value={pickupArea} onChange={setPickupArea} hideOnline />
+          <AddressInput placeholder="Exact pickup address (optional)" onAddress={(addr, lat, lng) => setPickupArea(a => ({ ...a, lat: lat ?? a.lat, lng: lng ?? a.lng, address: addr }))} />
+          <p className="font-medium text-gray-700 pt-2">📦 Dropoff location</p>
+          <AreaPicker value={dropoffArea} onChange={setDropoffArea} hideOnline />
+          <AddressInput placeholder="Exact dropoff address (optional)" onAddress={(addr, lat, lng) => setDropoffArea(a => ({ ...a, lat: lat ?? a.lat, lng: lng ?? a.lng, address: addr }))} />
         </div>
       )}
 

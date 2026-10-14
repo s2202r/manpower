@@ -11,7 +11,7 @@ export default async function HomePage() {
     supabase.from('categories').select('id, name, icon, slug').order('name').limit(8),
     supabase
       .from('tasks')
-      .select('id, title, type, budget_paise, display_area, created_at')
+      .select('id, title, task_type, budget_paise, display_area, created_at')
       .eq('status', 'open')
       .order('created_at', { ascending: false })
       .limit(6),
@@ -159,7 +159,7 @@ export default async function HomePage() {
                 >
                   <p className="font-bold text-gray-900 text-sm line-clamp-2 mb-2">{t.title}</p>
                   <div className="flex items-center justify-between mt-3">
-                    <span className="text-xs text-gray-400">{t.display_area ?? 'India'} · {t.type}</span>
+                    <span className="text-xs text-gray-400">{t.display_area ?? 'India'} · {t.task_type}</span>
                     <span className="text-sm font-black text-amber-600">{fmtRs(t.budget_paise as number)}</span>
                   </div>
                 </Link>
