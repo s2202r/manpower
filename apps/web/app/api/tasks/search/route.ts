@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('tasks')
-    .select('id, title, type, budget_paise, display_area')
+    .select('id, title, task_type, budget_paise, display_area')
     .eq('status', 'open')
     .textSearch('search_vector', q, { type: 'websearch', config: 'english' })
     .limit(6)

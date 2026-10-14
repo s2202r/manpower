@@ -29,7 +29,7 @@ export default async function EarningsPage() {
 
   const { data: bookings } = await supabase
     .from('bookings')
-    .select('id, amount_paise, escrow_state, created_at, tasks!task_id(title, type)')
+    .select('id, amount_paise, escrow_state, created_at, tasks!task_id(title, task_type)')
     .eq('tasker_id', user.id)
     .in('escrow_state', ['released', 'paid_out'])
     .order('created_at', { ascending: false })
