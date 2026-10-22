@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const protectedPaths = ['/dashboard', '/onboarding', '/tasks/new']
+  const protectedPaths = ['/dashboard', '/onboarding', '/tasks/new', '/admin']
   const isProtected = protectedPaths.some(p => pathname.startsWith(p))
 
   // Only hit Supabase on routes that actually need auth — avoids a round-trip on every public page
