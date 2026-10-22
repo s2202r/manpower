@@ -9,11 +9,11 @@ export const dynamic = 'force-dynamic'
 export default async function CategoriesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ msg?: string }>
+  searchParams: Promise<{ msg?: string; detail?: string }>
 }) {
   await requireAdmin()
   const supabase = createAdminClient()
-  const { msg } = await searchParams
+  const { msg, detail } = await searchParams
 
   const { data: categories } = await supabase
     .from('categories')
@@ -39,8 +39,9 @@ export default async function CategoriesPage({
         </div>
       )}
       {msg === 'error' && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 mb-5 text-sm text-red-700 font-medium">
-          ⚠ Something went wrong. Check the slug is unique.
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 mb-5 text-sm text-red-700">
+          <p className="font-semibold">⚠ Failed to create category</p>
+          {detail && <p className="mt-1 font-mono text-xs text-red-600">{detail}</p>}
         </div>
       )}
 
