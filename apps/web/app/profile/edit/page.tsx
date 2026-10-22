@@ -58,7 +58,7 @@ export default async function ProfileEditPage() {
             </div>
           </div>
           {tier !== 'kyc' && (
-            <Link href="/kyc"
+            <Link href="/profile/kyc"
               className="mt-4 flex items-center justify-between rounded-xl bg-white/15 hover:bg-white/25 px-4 py-2.5 text-sm font-semibold transition-colors">
               <span>Complete KYC to unlock lower fees</span>
               <span className="text-white/70">→</span>
@@ -81,7 +81,7 @@ export default async function ProfileEditPage() {
         <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
           <Link href="/profile/privacy" className="hover:text-gray-600 transition-colors">Privacy & data</Link>
           <span>·</span>
-          <Link href="/kyc" className="hover:text-gray-600 transition-colors">Verify identity</Link>
+          <Link href="/profile/kyc" className="hover:text-gray-600 transition-colors">Verify identity</Link>
         </div>
       </div>
     </main>
