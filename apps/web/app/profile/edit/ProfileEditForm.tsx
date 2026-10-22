@@ -35,8 +35,6 @@ export default function ProfileEditForm({ initialName, initialBio, initialLocale
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
-  const tierLabel = tier === 'kyc' ? '✅ KYC Verified' : tier === 'email' ? '📧 Email Verified' : '⚪ Not verified'
-
   async function save(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true); setError(''); setSaved(false)
@@ -55,21 +53,6 @@ export default function ProfileEditForm({ initialName, initialBio, initialLocale
 
   return (
     <form onSubmit={save} className="space-y-5">
-      {/* Account info (read-only) */}
-      <div className="rounded-2xl bg-white shadow-sm p-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Account</p>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">Email</p>
-            <p className="font-semibold text-gray-900">{email}</p>
-          </div>
-          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">{tierLabel}</span>
-        </div>
-        {ratingCount > 0 && rating && (
-          <p className="mt-3 text-sm text-amber-600 font-semibold">⭐ {rating.toFixed(1)} ({ratingCount} reviews)</p>
-        )}
-      </div>
-
       {/* Editable fields */}
       <div className="rounded-2xl bg-white shadow-sm p-5 space-y-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Profile</p>
@@ -115,14 +98,24 @@ export default function ProfileEditForm({ initialName, initialBio, initialLocale
         </Field>
       </div>
 
-      {error && <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</p>}
-      {saved && <p className="rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 font-semibold">Profile saved ✓</p>}
+      {error && (
+        <div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+          <span className="text-red-500 mt-0.5">⚠</span>
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+      {saved && (
+        <div className="flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-3">
+          <span className="text-green-500">✓</span>
+          <p className="text-sm text-green-700 font-semibold">Profile saved successfully</p>
+        </div>
+      )}
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 pb-2">
         <Link href="/dashboard" className="flex-1 rounded-xl border border-gray-200 py-3 text-center text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
           Cancel
         </Link>
-        <button type="submit" disabled={saving || name.trim().length < 2} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={saving || name.trim().length < 2} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors shadow-sm">
           {saving && <Spinner />}
           {saving ? 'Saving…' : 'Save profile'}
         </button>
