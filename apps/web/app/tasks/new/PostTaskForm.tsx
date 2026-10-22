@@ -7,6 +7,12 @@ interface Category { id: string; name: string; icon: string | null }
 
 const STEPS = ['Describe', 'Details', 'Review'] as const
 
+const TASK_TYPES = [
+  { value: 'in_person', label: '📍 In person', desc: 'Tasker comes to you' },
+  { value: 'pickup_drop', label: '🛵 Pickup & drop', desc: 'Item collected and returned' },
+  { value: 'remote', label: '💻 Remote', desc: 'Done online / over call' },
+] as const
+
 export default function PostTaskForm({ categories }: { categories: Category[] }) {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -16,15 +22,55 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
   // Form state
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [type, setType] = useState<'fixed' | 'hourly'>('fixed')
+  const [taskType, setTaskType] = useState<'in_person' | 'pickup_drop' | 'remote'>('in_person')
   const [budgetRs, setBudgetRs] = useState('')
+  const [pricingType, setPricingType] = useState<'fixed' | 'hourly'>('fixed')
   const [categoryId, setCategoryId] = useState<string>('')
-  const [area, setArea] = useState('')
+
+  // Location state
+  const [locating, setLocating] = useState(false)
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [address, setAddress] = useState('')
+  const [locError, setLocError] = useState('')
 
   function canNext() {
     if (step === 0) return title.length >= 5 && description.length >= 20
     if (step === 1) return Number(budgetRs) >= 100
     return true
+  }
+
+  async function detectLocation() {
+    if (!navigator.geolocation) {
+      setLocError('Geolocation not supported by your browser')
+      return
+    }
+    setLocating(true)
+    setLocError('')
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        const { latitude: lat, longitude: lng } = pos.coords
+        setCoords({ lat, lng })
+        // Reverse-geocode using free Nominatim API
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            { headers: { 'Accept-Language': 'en' } }
+          )
+          if (res.ok) {
+            const data = await res.json() as { display_name?: string; address?: Record<string, string> }
+            const a = data.address ?? {}
+            const parts = [a.suburb ?? a.neighbourhood, a.city ?? a.town ?? a.village, a.state].filter(Boolean)
+            setAddress(parts.join(', ') || data.display_name?.split(',').slice(0, 3).join(',').trim() || '')
+          }
+        } catch { /* ignore reverse geocode failure */ }
+        setLocating(false)
+      },
+      err => {
+        setLocError(err.code === 1 ? 'Location access denied — please type your area below' : 'Could not get location')
+        setLocating(false)
+      },
+      { timeout: 10000 }
+    )
   }
 
   async function submit() {
@@ -36,10 +82,13 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
       body: JSON.stringify({
         title,
         description,
-        type,
+        task_type: taskType,
+        pricing_type: pricingType,
         budget_paise: Math.round(Number(budgetRs) * 100),
         category_id: categoryId || null,
-        display_area: area || null,
+        display_area: address || null,
+        location_lat: coords?.lat ?? null,
+        location_lng: coords?.lng ?? null,
       }),
     })
     setSubmitting(false)
@@ -94,6 +143,25 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 resize-none"
               />
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Task type</label>
+              <div className="flex flex-col gap-2">
+                {TASK_TYPES.map(t => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setTaskType(t.value)}
+                    className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors ${taskType === t.value ? 'border-amber-400 bg-amber-50' : 'border-gray-200 hover:border-gray-300'}`}
+                  >
+                    <span className="text-lg">{t.label.split(' ')[0]}</span>
+                    <div>
+                      <p className={`text-sm font-semibold ${taskType === t.value ? 'text-amber-800' : 'text-gray-700'}`}>{t.label.split(' ').slice(1).join(' ')}</p>
+                      <p className="text-xs text-gray-400">{t.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </>
         )}
 
@@ -106,8 +174,8 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
                   <button
                     key={t}
                     type="button"
-                    onClick={() => setType(t)}
-                    className={`flex-1 rounded-xl border-2 py-3 text-sm font-semibold capitalize transition-colors ${type === t ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                    onClick={() => setPricingType(t)}
+                    className={`flex-1 rounded-xl border-2 py-3 text-sm font-semibold capitalize transition-colors ${pricingType === t ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
                   >
                     {t === 'fixed' ? '💰 Fixed price' : '⏱️ Hourly rate'}
                   </button>
@@ -133,6 +201,45 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
               </div>
             </div>
 
+            {/* Location picker */}
+            {taskType !== 'remote' && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                <button
+                  type="button"
+                  onClick={detectLocation}
+                  disabled={locating}
+                  className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 mb-3"
+                >
+                  {locating ? (
+                    <svg className="animate-spin h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )}
+                  {locating ? 'Detecting…' : coords ? 'Update my location' : 'Use my location'}
+                </button>
+                {locError && <p className="text-xs text-red-500 mb-2">{locError}</p>}
+                {coords && (
+                  <p className="text-xs text-green-600 mb-2">
+                    ✓ Location detected ({coords.lat.toFixed(4)}, {coords.lng.toFixed(4)})
+                  </p>
+                )}
+                <input
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  placeholder="e.g. Bandra West, Mumbai"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                />
+                <p className="text-xs text-gray-400 mt-1">Edit or type your area / neighbourhood</p>
+              </div>
+            )}
+
             {categories.length > 0 && (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Category (optional)</label>
@@ -157,16 +264,6 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
                 </div>
               </div>
             )}
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Location / area (optional)</label>
-              <input
-                value={area}
-                onChange={e => setArea(e.target.value)}
-                placeholder="e.g. Bandra, Mumbai"
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
-              />
-            </div>
           </>
         )}
 
@@ -182,15 +279,19 @@ export default function PostTaskForm({ categories }: { categories: Category[] })
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Description</p>
                 <p className="text-sm text-gray-600 mt-0.5 line-clamp-3">{description}</p>
               </div>
-              <div className="flex gap-6">
+              <div className="flex gap-6 flex-wrap">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Type</p>
+                  <p className="text-sm text-gray-900 capitalize">{taskType.replace('_', ' ')}</p>
+                </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Budget</p>
-                  <p className="text-sm font-bold text-gray-900">₹{Number(budgetRs).toLocaleString('en-IN')} {type}</p>
+                  <p className="text-sm font-bold text-gray-900">₹{Number(budgetRs).toLocaleString('en-IN')} {pricingType}</p>
                 </div>
-                {area && (
+                {address && (
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Area</p>
-                    <p className="text-sm text-gray-900">{area}</p>
+                    <p className="text-sm text-gray-900">{address}{coords ? ' 📍' : ''}</p>
                   </div>
                 )}
               </div>

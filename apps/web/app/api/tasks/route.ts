@@ -12,9 +12,12 @@ export async function POST(req: NextRequest) {
     title?: string
     description?: string
     task_type?: string
+    pricing_type?: string
     budget_paise?: number
     category_id?: string | null
     display_area?: string | null
+    location_lat?: number | null
+    location_lng?: number | null
   }
 
   const title = body.title?.trim()
@@ -35,6 +38,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Budget must be at least ₹100 (10000 paise)' }, { status: 400 })
   }
 
+  const lat = body.location_lat
+  const lng = body.location_lng
+  const locationPoint = (typeof lat === 'number' && typeof lng === 'number')
+    ? `SRID=4326;POINT(${lng} ${lat})`
+    : null
+
   const { data: task, error } = await supabase.from('tasks').insert({
     title,
     description,
@@ -42,6 +51,7 @@ export async function POST(req: NextRequest) {
     budget_paise,
     category_id: body.category_id ?? null,
     display_area: body.display_area?.trim() ?? null,
+    location: locationPoint,
     poster_id: user.id,
     status: 'open',
   }).select('id').single()
