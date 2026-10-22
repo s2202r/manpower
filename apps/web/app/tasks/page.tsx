@@ -17,7 +17,7 @@ export default async function TaskFeedPage({
 
   const { data: categories } = await supabase
     .from('categories')
-    .select('id, name, slug, icon')
+    .select('id, names, slug, icon')
     .order('name')
 
   const sortBy = sort === 'budget_asc' ? { col: 'budget_paise', asc: true }

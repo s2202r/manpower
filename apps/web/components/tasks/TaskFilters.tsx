@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useState } from 'react'
 
-interface Category { id: string; slug: string; name: string; icon: string | null }
+interface Category { id: string; slug: string; names: Record<string, string>; icon: string | null }
 
 interface Current {
   type?: string; category?: string
@@ -92,7 +92,7 @@ export default function TaskFilters({ categories, current }: { categories: Categ
                   : 'bg-white border border-gray-200 text-gray-700 hover:border-amber-300'
               }`}
             >
-              {cat.icon} {cat.name}
+              {cat.icon} {cat.names?.['en'] ?? cat.slug}
             </a>
           ))}
         </div>
