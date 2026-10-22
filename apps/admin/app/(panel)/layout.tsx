@@ -31,8 +31,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           </div>
           <form action="/auth/sign-out" method="POST" className="pb-2">
             <button type="submit"
-              className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-gray-800 hover:text-gray-300 transition-colors">
-              Sign out
+              className="w-full rounded-lg border border-gray-700 px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
+              ↩ Sign out
             </button>
           </form>
         </nav>
