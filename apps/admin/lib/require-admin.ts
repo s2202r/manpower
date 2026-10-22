@@ -17,7 +17,7 @@ export async function requireAdmin() {
     },
   )
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/unauthorized')
+  if (!user) redirect('/login')
 
   const { data: profile } = await supabase
     .from('profiles')
