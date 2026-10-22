@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/require-admin'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   await requireAdmin()
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(new URL('/admin/categories?msg=error&detail=no_types', req.url))
   }
 
-  const supabase = createAdminClient()
+  const supabase = await createClient()
   const { error } = await supabase.from('categories').insert({
     slug,
     icon,
