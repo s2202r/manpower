@@ -1,5 +1,5 @@
 import { requireAdmin } from '@/lib/require-admin'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import CategoryDeleteButton from './CategoryDeleteButton'
 import CategoryCreateForm from './CategoryCreateForm'
 
@@ -12,7 +12,7 @@ export default async function CategoriesPage({
   searchParams: Promise<{ msg?: string; detail?: string }>
 }) {
   await requireAdmin()
-  const supabase = createAdminClient()
+  const supabase = await createClient()
   const { msg, detail } = await searchParams
 
   const { data: categories } = await supabase
