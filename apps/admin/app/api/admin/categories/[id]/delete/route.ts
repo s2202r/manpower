@@ -6,6 +6,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await requireAdmin()
   const { id } = await params
   const supabase = createAdminClient()
-  await supabase.from('task_categories').delete().eq('id', id)
+  await supabase.from('categories').delete().eq('id', id)
   return NextResponse.redirect(new URL('/categories?msg=deleted', req.url))
 }

@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 import { NextResponse } from 'next/server'
 
 export async function POST() {
@@ -10,7 +11,8 @@ export async function POST() {
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
-        setAll: (all) => all.forEach(({ name, value, options }) => cookieStore.set(name, value, options)),
+        setAll: (all: Array<{ name: string; value: string; options?: Partial<ResponseCookie> }>) =>
+          all.forEach(({ name, value, options }) => cookieStore.set(name, value, options)),
       },
     },
   )
